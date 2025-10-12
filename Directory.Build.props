@@ -22,7 +22,7 @@
         <!-- <DefineConstants>DEBUG;SOLVERTRACE</DefineConstants> -->
 
         <!-- Properties used by KSPBuildTools -->
-        <GameDataSubDir>000_PluginLoader</GameDataSubDir>
+        <GameDataSubDir>BackgroundThrust</GameDataSubDir>
         <GameDataOutDir>$(ProjectRootDir)\GameData\$(GameDataSubDir)</GameDataOutDir>
         <BinariesOutputRelativePath>GameData\$(GameDataSubDir)\Plugins</BinariesOutputRelativePath>
     </PropertyGroup>

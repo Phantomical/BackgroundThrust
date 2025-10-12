@@ -12,7 +12,7 @@ along with your current mod list. For best results, follow the instructions at
 In order to build the mod you will need:
 - the `dotnet` CLI
 
-Next, you will want to create a `KSPPluginLoader.props.user` file
+Next, you will want to create a `BackgroundThrust.props.user` file
 in the repository root, like this one:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -31,7 +31,7 @@ Finally, you can build by running either:
 - `dotnet build` (for a debug build), or,
 - `dotnet build -c Release` (for a release build)
 
-This will create a `GameData\000_PluginLoader` folder which you can then drop
+This will create a `GameData\BackgroundThrust` folder which you can then drop
 into your KSP install's `GameData` folder.
 
 > ### Linking the output into your `GameData` folder
@@ -43,7 +43,7 @@ into your KSP install's `GameData` folder.
 > To do this you will need to run the following command in an admin `cmd.exe`
 > prompt (for windows) in your `GameData` directory:
 > ```batch
-> mklink /j 000_PluginLoader C:\path\to\BRP\repo\GameData\000_PluginLoader
+> mklink /j 000_PluginLoader C:\path\to\BackgroundThrust\repo\GameData\BackgroundThrust
 > ```
 >
 > On Linux or MacOS you should be able to accomplish the same thing using `ln`.
