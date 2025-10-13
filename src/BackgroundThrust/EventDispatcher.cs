@@ -18,12 +18,14 @@ internal class EventDispatcher : MonoBehaviour
     void Start()
     {
         GameEvents.onVesselWasModified.Add(OnVesselWasModified);
+        GameEvents.onMultiModeEngineSwitchActive.Add(OnMultiModeEngineSwitchActive);
         Config.onAutopilotModeChange.Add(OnVesselAutopilotModeChanged);
     }
 
     void OnDestroy()
     {
         GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+        GameEvents.onMultiModeEngineSwitchActive.Remove(OnMultiModeEngineSwitchActive);
         Config.onAutopilotModeChange.Remove(OnVesselAutopilotModeChanged);
     }
 
@@ -36,7 +38,7 @@ internal class EventDispatcher : MonoBehaviour
         module.Engines = null;
     }
 
-    internal void OnVesselAutopilotModeChanged(
+    void OnVesselAutopilotModeChanged(
         GameEvents.HostedFromToAction<Vessel, VesselAutopilot.AutopilotMode> evt
     )
     {
@@ -44,6 +46,15 @@ internal class EventDispatcher : MonoBehaviour
         var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
 
         module.OnVesselAutopilotModeChanged(evt.from, evt.to);
+    }
+
+    void OnMultiModeEngineSwitchActive(MultiModeEngine engine)
+    {
+        var module = engine.part.FindModuleImplementing<BackgroundEngine>();
+        if (module is null)
+            return;
+
+        module.OnMultiModeEngineSwitchActive();
     }
 
     // Even if we clear the input locks then stock doesn't seem to want to

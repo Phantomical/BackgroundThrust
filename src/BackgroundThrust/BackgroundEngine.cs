@@ -1,27 +1,17 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Net.Cache;
 using System.Reflection;
+using System.Runtime.Serialization.Formatters;
 using BackgroundThrust.Patches;
+using CommNet.Network;
+using Steamworks;
 using UnityEngine;
 
 namespace BackgroundThrust;
-
-public class EngineInfo
-{
-    /// <summary>
-    /// The independent throttle for this engine, if it has one.
-    /// </summary>
-    public double? Throttle = null;
-
-    // public List<EnginePropellant> Propellants;
-
-    // public EngineInfo(ModuleEngines engine)
-    // {
-    //     if (engine.independentThrottle)
-    //         Throttle =
-    // }
-}
 
 public class BackgroundEngine : PartModule
 {
@@ -53,10 +43,9 @@ public class BackgroundEngine : PartModule
     )]
     public bool IsEnabled = true;
 
+    #region Event Handlers
     public override void OnStart(StartState state)
     {
-        base.OnStart(state);
-
         if (state == StartState.Editor)
         {
             enabled = false;
@@ -64,8 +53,46 @@ public class BackgroundEngine : PartModule
         }
 
         FindModuleEngines();
+
+        GameEvents.onTimeWarpRateChanged.Add(OnTimeWarpRateChanged);
+        GameEvents.onVesselGoOffRails.Add(OnVesselGoOffRails);
     }
 
+    void OnDestroy()
+    {
+        GameEvents.onTimeWarpRateChanged.Remove(OnTimeWarpRateChanged);
+        GameEvents.onVesselGoOffRails.Remove(OnVesselGoOffRails);
+    }
+
+    internal void OnMultiModeEngineSwitchActive()
+    {
+        if (MultiModeEngine is not null)
+            return;
+
+        if (MultiModeEngine.runningPrimary)
+            Engine = MultiModeEngine.PrimaryEngine;
+        else
+            Engine = MultiModeEngine.SecondaryEngine;
+
+        ClearBuffers();
+    }
+
+    void OnTimeWarpRateChanged()
+    {
+        if (vessel.packed)
+            UpdateBuffers();
+    }
+
+    void OnVesselGoOffRails(Vessel vessel)
+    {
+        if (vessel != this.vessel)
+            return;
+
+        ClearBuffers();
+    }
+    #endregion
+
+    #region Packed Update
     internal void PackedEngineUpdate()
     {
         if (Engine is null)
@@ -78,6 +105,7 @@ public class BackgroundEngine : PartModule
         {
             Thrust = 0.0;
             Engine.DeactivateLoopingFX();
+            ClearBuffers();
             return;
         }
 
@@ -140,6 +168,163 @@ public class BackgroundEngine : PartModule
             Thrust = 0.0;
         }
     }
+    #endregion
+
+    #region Buffer Handling
+    struct BufferInfo()
+    {
+        public double? OriginalMaxAmount = null;
+        public double FuelFlow;
+        public PartResource Resource;
+        public Propellant Propellant;
+    }
+
+    BufferInfo[] buffers;
+
+    private BufferInfo[] GetOrCreateBuffers()
+    {
+        if (this.buffers is not null)
+            ClearBuffers();
+
+        if (Engine is null)
+            return [];
+
+        var propellants = Engine.propellants;
+        var buffers = new BufferInfo[propellants.Count];
+
+        // Rebuilding resource sets is a fairly expensive operation.
+        using var guard = DisableUpdateResourcesOnEvent();
+
+        int index = 0;
+        foreach (var propellant in propellants)
+        {
+            var resource = part.Resources[propellant.name];
+            var info = new BufferInfo()
+            {
+                FuelFlow = Engine.getMaxFuelFlow(propellant),
+                Resource = resource,
+                Propellant = propellant,
+                OriginalMaxAmount = resource?.maxAmount,
+            };
+
+            if (resource is null)
+            {
+                ConfigNode node = new("RESOURCE");
+                node.AddValue("name", propellant.name);
+                node.AddValue("maxAmount", 0);
+                node.AddValue("amount", 0);
+                node.AddValue("isVisible", false);
+
+                info.Resource = part.AddResource(node);
+            }
+
+            buffers[index] = info;
+            index += 1;
+        }
+
+        return buffers;
+    }
+
+    public void UpdateBuffers()
+    {
+        buffers ??= GetOrCreateBuffers();
+        double warp = TimeWarp.fixedDeltaTime;
+
+        foreach (var info in buffers)
+        {
+            var bufferAmount = info.FuelFlow * warp * Config.BufferCapacityMult;
+            if (info.OriginalMaxAmount is double amount)
+                bufferAmount = Math.Max(amount, bufferAmount);
+
+            info.Resource.maxAmount = bufferAmount;
+        }
+    }
+
+    public void ClearBuffers()
+    {
+        if (buffers is null)
+            return;
+
+        using var guard = DisableUpdateResourcesOnEvent();
+
+        foreach (var buffer in buffers)
+        {
+            var resource = buffer.Resource;
+
+            if (buffer.OriginalMaxAmount is double maxAmount)
+                resource.maxAmount = maxAmount;
+            else
+                maxAmount = 0.0;
+
+            resource.maxAmount = maxAmount;
+            var extra = Math.Max(resource.amount - resource.maxAmount, 0.0);
+            if (extra > 0.0)
+            {
+                resource.amount = maxAmount;
+
+                var transferred = part.RequestResource(
+                    buffer.Propellant.id,
+                    -extra,
+                    buffer.Propellant.GetFlowMode(),
+                    simulate: false
+                );
+
+                resource.amount += extra - Math.Abs(transferred);
+            }
+
+            if (buffer.OriginalMaxAmount is null)
+                part.RemoveResource(buffer.Resource);
+        }
+
+        buffers = null;
+    }
+
+    /// <summary>
+    /// Adding/removing a resource from a part causes a vessel to rebuild
+    /// all its partsets. This is ok if done once, but horrendously expensive
+    /// if done repeatedly for every propellant on every active engine.
+    ///
+    /// This method disables that for the lifetime of the returned guard and
+    /// starts up a coroutine that will do a single update of the resource sets
+    /// at the end of the fixed update.
+    /// </summary>
+    /// <returns></returns>
+    private DisableUpdateResourcesOnEventGuard DisableUpdateResourcesOnEvent()
+    {
+        if (vessel.updateResourcesOnEvent)
+            StartCoroutine(DelayedUpdateResourceSets(vessel));
+        return new(vessel);
+    }
+
+    private IEnumerator DelayedUpdateResourceSets(Vessel vessel)
+    {
+        yield return new WaitForFixedUpdate();
+
+        if (vessel == null)
+            yield break;
+
+        vessel.UpdateResourceSetsIfDirty();
+    }
+
+    private readonly struct DisableUpdateResourcesOnEventGuard : IDisposable
+    {
+        readonly Vessel vessel;
+        public readonly bool prev;
+
+        public DisableUpdateResourcesOnEventGuard(Vessel vessel)
+        {
+            this.vessel = vessel;
+            this.prev = vessel.updateResourcesOnEvent;
+
+            vessel.updateResourcesOnEvent = false;
+        }
+
+        public void Dispose()
+        {
+            vessel.updateResourcesOnEvent = prev;
+        }
+    }
+    #endregion
 
     private void FindModuleEngines()
     {

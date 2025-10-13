@@ -25,5 +25,10 @@ public static class Config
     /// </summary>
     public static bool UnloadedResourceProcessing = true;
 
+    /// <summary>
+    /// An extra multiplier on the buffer capacity for persistent engines.
+    /// </summary>
+    public static readonly double BufferCapacityMult = 2.0;
+
     public static ICurrentHeadingProvider HeadingProvider = new DefaultHeadingProvider();
 }
