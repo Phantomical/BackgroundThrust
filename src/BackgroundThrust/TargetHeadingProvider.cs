@@ -9,6 +9,8 @@ namespace BackgroundThrust;
 /// </summary>
 public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHeadingProvider>
 {
+    public Vessel Vessel;
+
     /// <summary>
     /// Get the current target heading for the vessel.
     /// </summary>
@@ -63,8 +65,6 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
         vessel.orbit.Perturb(deltaV * (Vector3d)heading, parameters.StopUT);
     }
 
-    public static TargetHeadingProvider Load(ConfigNode node)
-    {
-        return (TargetHeadingProvider)DynamicallySerializable<TargetHeadingProvider>.Load(node);
-    }
+    public static TargetHeadingProvider Load(Vessel vessel, ConfigNode node) =>
+        Load(node, provider => provider.Vessel = vessel);
 }

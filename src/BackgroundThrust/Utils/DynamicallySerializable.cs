@@ -17,6 +17,7 @@ public class DynamicallySerializable
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public abstract class DynamicallySerializable<T> : DynamicallySerializable
+    where T : DynamicallySerializable<T>
 {
     private static readonly ReaderWriterLockSlim rwlock = new();
     private static Dictionary<string, Type> registry = [];
@@ -52,10 +53,7 @@ public abstract class DynamicallySerializable<T> : DynamicallySerializable
         OnSave(node);
     }
 
-    protected static DynamicallySerializable<T> Load(
-        ConfigNode node,
-        Action<DynamicallySerializable<T>> preload = null
-    )
+    protected static T Load(ConfigNode node, Action<T> preload = null)
     {
         Type type;
 
@@ -83,7 +81,7 @@ public abstract class DynamicallySerializable<T> : DynamicallySerializable
             rwlock.ExitReadLock();
         }
 
-        var inst = (DynamicallySerializable<T>)Activator.CreateInstance(type);
+        var inst = (T)Activator.CreateInstance(type);
 
         preload?.Invoke(inst);
         inst.OnLoad(node);

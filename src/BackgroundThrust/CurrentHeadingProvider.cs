@@ -28,27 +28,27 @@ public class DefaultHeadingProvider : ICurrentHeadingProvider
 
             case AutopilotMode.Prograde:
                 if (displayMode == SpeedDisplayModes.Orbit)
-                    return OrbitPrograde.Instance;
+                    return new OrbitPrograde();
                 break;
             case AutopilotMode.Retrograde:
                 if (displayMode == SpeedDisplayModes.Orbit)
-                    return OrbitRetrograde.Instance;
+                    return new OrbitRetrograde();
                 break;
             case AutopilotMode.Normal:
                 if (displayMode == SpeedDisplayModes.Orbit)
-                    return OrbitNormal.Instance;
+                    return new OrbitNormal();
                 break;
             case AutopilotMode.Antinormal:
                 if (displayMode == SpeedDisplayModes.Orbit)
-                    return OrbitAntiNormal.Instance;
+                    return new OrbitAntiNormal();
                 break;
             case AutopilotMode.RadialIn:
                 if (displayMode == SpeedDisplayModes.Orbit)
-                    return OrbitRadialIn.Instance;
+                    return new OrbitRadialIn();
                 break;
             case AutopilotMode.RadialOut:
                 if (displayMode == SpeedDisplayModes.Orbit)
-                    return OrbitRadialOut.Instance;
+                    return new OrbitRadialOut();
                 break;
 
             default:

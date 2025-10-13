@@ -43,6 +43,9 @@ public class BackgroundEngine : PartModule
     )]
     public bool IsEnabled = true;
 
+    [KSPField]
+    private double RequiredEC = 0.0;
+
     #region Event Handlers
     public override void OnStart(StartState state)
     {
@@ -218,6 +221,9 @@ public class BackgroundEngine : PartModule
                 info.Resource = part.AddResource(node);
             }
 
+            if (propellant.id == PartResourceLibrary.ElectricityHashcode)
+                RequiredEC = info.FuelFlow;
+
             buffers[index] = info;
             index += 1;
         }
@@ -233,6 +239,7 @@ public class BackgroundEngine : PartModule
         foreach (var info in buffers)
         {
             var bufferAmount = info.FuelFlow * warp * Config.BufferCapacityMult;
+
             if (info.OriginalMaxAmount is double amount)
                 bufferAmount = Math.Max(amount, bufferAmount);
 
@@ -242,6 +249,8 @@ public class BackgroundEngine : PartModule
 
     public void ClearBuffers()
     {
+        RequiredEC = 0.0;
+
         if (buffers is null)
             return;
 

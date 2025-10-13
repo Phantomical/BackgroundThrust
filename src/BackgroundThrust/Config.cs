@@ -23,7 +23,7 @@ public static class Config
     /// If <c>true</c> then BackgroundThrust will not do any resource handling
     /// in the background.
     /// </summary>
-    public static bool UnloadedResourceProcessing = true;
+    public static bool BackgroundProcessing = true;
 
     /// <summary>
     /// An extra multiplier on the buffer capacity for persistent engines.

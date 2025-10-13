@@ -1,21 +1,50 @@
 using System.Collections;
 using System.Collections.Generic;
 using BackgroundThrust.Heading;
-using BackgroundThrust.Utils;
 using UnityEngine;
 
 namespace BackgroundThrust;
 
 public class BackgroundThrustVessel : VesselModule
 {
+    /// <summary>
+    /// The UT at which an update last occurred.
+    /// </summary>
     [KSPField(isPersistant = true)]
     public double LastUpdateTime = 0.0;
 
+    /// <summary>
+    /// The vessel mass at the time that an update last occurred.
+    /// </summary>
     [KSPField(isPersistant = true)]
     public double LastUpdateMass = 0.0;
 
     [KSPField(isPersistant = true)]
-    public double Thrust = 0.0;
+    private double thrust = 0.0;
+
+    /// <summary>
+    /// The current thrust being produced by this vessel.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// It will automatically be updated while the ship is loaded, if you are
+    /// implementing background processing then use <see cref="SetThrust"/> to
+    /// set this while the ship is unloaded.
+    /// </remarks>
+    public double Thrust => thrust;
+
+    /// <summary>
+    /// The rate at which the vessel mass is changing. This is used by
+    /// background processing and needs to be set appropriately by
+    /// whichever implementation of background processing is available.
+    /// </summary>
+    public double? MassChangeRate;
+
+    /// <summary>
+    /// The dry mass of the vessel. This is only used for background processing
+    /// and is not updated when the module is loaded.
+    /// </summary>
+    public double? DryMass;
 
     public TargetHeadingProvider TargetHeading;
 
@@ -26,38 +55,39 @@ public class BackgroundThrustVessel : VesselModule
         set => _engines = value;
     }
 
-    protected override void OnStart()
-    {
-        if (LastUpdateTime == 0.0)
-        {
-            LastUpdateTime = Planetarium.GetUniversalTime();
-            LastUpdateMass = vessel.totalMass;
-        }
-    }
-
     void FixedUpdate()
     {
         if (!vessel.loaded)
-        {
             BackgroundFixedUpdate();
-            return;
-        }
-
-        if (vessel.packed)
+        else if (vessel.packed)
             PackedFixedUpdate();
         else
             UnpackedFixedUpdate();
     }
+
+    #region Getters and Setters
+    public void SetThrust(double thrust)
+    {
+        if (this.thrust == 0.0)
+            LastUpdateTime = Planetarium.GetUniversalTime();
+
+        if (thrust > 0.0 && TargetHeading is not null && enabled)
+            enabled = true;
+
+        this.thrust = thrust;
+    }
+    #endregion
 
     #region FixedUpdate for unpacked vessels
     void UnpackedFixedUpdate()
     {
         LastUpdateTime = Planetarium.GetUniversalTime();
         LastUpdateMass = vessel.totalMass;
+        MassChangeRate = null;
     }
     #endregion
 
-    #region FixedUpdate for packed vessels
+    #region Packed Vessel Handling
     void PackedFixedUpdate()
     {
         if (vessel.ctrlState.mainThrottle == 0f)
@@ -72,10 +102,9 @@ public class BackgroundThrustVessel : VesselModule
         if (lastUpdateTime == 0.0)
             return;
 
-        TargetHeading ??= new FixedHeading(vessel.transform.up);
+        TargetHeading ??= new FixedHeading(vessel.transform.up) { Vessel = vessel };
 
-        var ntarget = TargetHeading.GetTargetHeading(this, now);
-        if (ntarget is null)
+        if (TargetHeading.GetTargetHeading(this, now) is not Vector3d target)
         {
             vessel.ctrlState.mainThrottle = 0f;
 
@@ -84,22 +113,20 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
-        double thrust = 0.0;
-        foreach (var engine in Engines)
-        {
-            engine.PackedEngineUpdate();
-            thrust += engine.Thrust;
-        }
-        Thrust = thrust;
-
-        var target = (Vector3d)ntarget;
-
         // Make sure that the vessel is pointing in the target direction.
         vessel.transform.Rotate(
             Quaternion.FromToRotation(vessel.transform.up, (Vector3)target).eulerAngles,
             Space.World
         );
         vessel.SetRotation(vessel.transform.rotation);
+
+        double thrust = 0.0;
+        foreach (var engine in Engines)
+        {
+            engine.PackedEngineUpdate();
+            thrust += engine.Thrust;
+        }
+        this.thrust = thrust;
 
         var parameters = new ThrustParameters
         {
@@ -115,30 +142,59 @@ public class BackgroundThrustVessel : VesselModule
     }
     #endregion
 
-    #region FixedUpdate for unloaded vessels
-    void BackgroundFixedUpdate()
+    #region Unloaded Vessel Handling
+    void BackgroundFixedUpdate() => BackgroundFixedUpdate(Planetarium.GetUniversalTime());
+
+    public void BackgroundFixedUpdate(double UT)
     {
-        // if (Thrust == 0.0)
-        // {
-        //     // There's no point running fixed updates if thrust is 0, so we
-        //     // disable ourselves here.
-        //     enabled = false;
-        //     return;
-        // }
+        if (vessel.loaded)
+            return;
 
-        // if (TargetHeadingProvider is null)
-        //     return;
+        if (!Config.BackgroundProcessing || Thrust == 0.0 || TargetHeading is null)
+        {
+            // There's no point running fixed updates if thrust is 0, so we
+            // disable ourselves here.
+            enabled = false;
+            return;
+        }
 
-        // var now = Planetarium.GetUniversalTime();
-        // if (Config.UnloadedResourceProcessing)
-        //     BackgroundEngineUpdate(LastUpdateTime, now);
+        var lastUpdateTime = LastUpdateTime;
+        var lastUpdateMass = LastUpdateMass;
+        LastUpdateTime = UT;
 
-        // TargetHeadingProvider?.IntegrateThrust(this, LastUpdateTime, now);
-        // LastUpdateTime = now;
+        var deltaT = UT - LastUpdateTime;
+        if (deltaT <= 0.0)
+            return;
+        if (MassChangeRate is not double rate)
+            return;
+
+        var deltaM = rate * deltaT;
+        var currentMass = lastUpdateMass + deltaM;
+        var dryMass = DryMass ?? 0.0;
+
+        LastUpdateMass = currentMass;
+
+        if (currentMass <= dryMass)
+        {
+            LastUpdateMass = lastUpdateMass;
+            thrust = 0.0;
+            return;
+        }
+
+        var parameters = new ThrustParameters
+        {
+            StartUT = lastUpdateTime,
+            StopUT = UT,
+            StartMass = LastUpdateMass,
+            StopMass = currentMass,
+            Thrust = Thrust,
+        };
+
+        TargetHeading.IntegrateThrust(this, parameters);
     }
-
-    void BackgroundEngineUpdate(double startUT, double endUT) { }
     #endregion
+
+    #region Helpers
 
     private IEnumerator DelayPreserveThrottle(float throttle, int frames = 1)
     {
@@ -148,10 +204,61 @@ public class BackgroundThrustVessel : VesselModule
         vessel.ctrlState?.mainThrottle = throttle;
     }
 
+    private TargetHeadingProvider GetNewHeadingProvider()
+    {
+        var provider = Config.HeadingProvider.GetCurrentHeading(this);
+        provider.Vessel = Vessel;
+        return provider;
+    }
+
+    private double GetVesselDryMass()
+    {
+        if (vessel == null)
+            return 0.0;
+
+        double mass = 0f;
+        foreach (var part in vessel.parts)
+            mass += part.mass;
+
+        return mass;
+    }
+    #endregion
+
     #region Event Handlers
+    protected override void OnStart()
+    {
+        if (vessel.loaded)
+        {
+            MassChangeRate = null;
+            DryMass = null;
+        }
+
+        if (LastUpdateTime == 0.0)
+        {
+            LastUpdateTime = Planetarium.GetUniversalTime();
+            LastUpdateMass = vessel.totalMass;
+        }
+
+        if (Thrust == 0.0)
+            return;
+
+        // If we are actively thrusting towards a heading then rotate the vessel
+        // to point that way.
+        var now = Planetarium.GetUniversalTime();
+        if (TargetHeading?.GetTargetHeading(this, now) is Vector3d target)
+        {
+            // Make sure that the vessel is pointing in the target direction.
+            vessel.transform.Rotate(
+                Quaternion.FromToRotation(vessel.transform.up, (Vector3)target).eulerAngles,
+                Space.World
+            );
+            vessel.SetRotation(vessel.transform.rotation);
+        }
+    }
+
     public override void OnGoOnRails()
     {
-        TargetHeading = Config.HeadingProvider.GetCurrentHeading(this);
+        TargetHeading = GetNewHeadingProvider();
         StartCoroutine(DelayPreserveThrottle(vessel.ctrlState.mainThrottle));
     }
 
@@ -171,7 +278,20 @@ public class BackgroundThrustVessel : VesselModule
         if (from == to)
             return;
 
-        TargetHeading = Config.HeadingProvider.GetCurrentHeading(this);
+        TargetHeading = GetNewHeadingProvider();
+    }
+
+    public override void OnLoadVessel()
+    {
+        // This is only used for background processing and needs to be set
+        // by whatever system is doing background processing.
+        MassChangeRate = null;
+        DryMass = null;
+    }
+
+    public override void OnUnloadVessel()
+    {
+        DryMass ??= GetVesselDryMass();
     }
 
     protected override void OnLoad(ConfigNode node)
@@ -180,14 +300,39 @@ public class BackgroundThrustVessel : VesselModule
 
         ConfigNode child = null;
         if (node.TryGetNode("TARGET_HEADING", ref child))
-            TargetHeading = TargetHeadingProvider.Load(node);
+            TargetHeading = TargetHeadingProvider.Load(vessel, child);
+
+        float throttle = 0f;
+        if (node.TryGetValue("throttle", ref throttle))
+            vessel?.ctrlState?.mainThrottle = throttle;
+
+        double massChangeRate = 0.0;
+        if (node.TryGetValue(nameof(MassChangeRate), ref massChangeRate))
+            MassChangeRate = massChangeRate;
+        double dryMass = 0.0;
+        if (node.TryGetValue(nameof(DryMass), ref dryMass))
+            DryMass = dryMass;
     }
 
     protected override void OnSave(ConfigNode node)
     {
         base.OnSave(node);
 
+        if (vessel.loaded)
+            DryMass ??= GetVesselDryMass();
+
         TargetHeading?.Save(node.AddNode("TARGET_HEADING"));
+
+        if (vessel?.ctrlState?.mainThrottle is float throttle)
+            node.AddValue("throttle", throttle);
+        if (MassChangeRate is double massChangeRate)
+            node.AddValue(nameof(MassChangeRate), massChangeRate);
+
+        double? dryMass = DryMass;
+        if (vessel.loaded)
+            dryMass ??= GetVesselDryMass();
+        if (dryMass is double mass)
+            node.AddValue(nameof(DryMass), mass);
     }
     #endregion
 }
