@@ -17,7 +17,7 @@ public class BackgroundThrustVessel : VesselModule
     [KSPField(isPersistant = true)]
     public double Thrust = 0.0;
 
-    public TargetHeadingProvider TargetHeadingProvider;
+    public TargetHeadingProvider TargetHeading;
 
     private List<BackgroundEngine> _engines = null;
     public List<BackgroundEngine> Engines
@@ -29,7 +29,10 @@ public class BackgroundThrustVessel : VesselModule
     protected override void OnStart()
     {
         if (LastUpdateTime == 0.0)
+        {
             LastUpdateTime = Planetarium.GetUniversalTime();
+            LastUpdateMass = vessel.totalMass;
+        }
     }
 
     void FixedUpdate()
@@ -42,7 +45,17 @@ public class BackgroundThrustVessel : VesselModule
 
         if (vessel.packed)
             PackedFixedUpdate();
+        else
+            UnpackedFixedUpdate();
     }
+
+    #region FixedUpdate for unpacked vessels
+    void UnpackedFixedUpdate()
+    {
+        LastUpdateTime = Planetarium.GetUniversalTime();
+        LastUpdateMass = vessel.totalMass;
+    }
+    #endregion
 
     #region FixedUpdate for packed vessels
     void PackedFixedUpdate()
@@ -59,9 +72,9 @@ public class BackgroundThrustVessel : VesselModule
         if (lastUpdateTime == 0.0)
             return;
 
-        TargetHeadingProvider ??= new FixedHeading(vessel.transform.up);
+        TargetHeading ??= new FixedHeading(vessel.transform.up);
 
-        var ntarget = TargetHeadingProvider.GetTargetHeading(this, now);
+        var ntarget = TargetHeading.GetTargetHeading(this, now);
         if (ntarget is null)
         {
             vessel.ctrlState.mainThrottle = 0f;
@@ -71,9 +84,6 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
-        var target = (Vector3d)ntarget;
-        var deltaT = now - lastUpdateTime;
-
         double thrust = 0.0;
         foreach (var engine in Engines)
         {
@@ -82,11 +92,14 @@ public class BackgroundThrustVessel : VesselModule
         }
         Thrust = thrust;
 
+        var target = (Vector3d)ntarget;
+
         // Make sure that the vessel is pointing in the target direction.
-        vessel.transform.rotation *= Quaternion.FromToRotation(
-            vessel.transform.up,
-            (Vector3)target
+        vessel.transform.Rotate(
+            Quaternion.FromToRotation(vessel.transform.up, (Vector3)target).eulerAngles,
+            Space.World
         );
+        vessel.SetRotation(vessel.transform.rotation);
 
         var parameters = new ThrustParameters
         {
@@ -97,7 +110,7 @@ public class BackgroundThrustVessel : VesselModule
             Thrust = Thrust,
         };
 
-        TargetHeadingProvider.IntegrateThrust(this, parameters);
+        TargetHeading.IntegrateThrust(this, parameters);
         LastUpdateTime = now;
     }
     #endregion
@@ -127,17 +140,38 @@ public class BackgroundThrustVessel : VesselModule
     void BackgroundEngineUpdate(double startUT, double endUT) { }
     #endregion
 
-    private IEnumerator DelayPreserveThrottle(float throttle)
+    private IEnumerator DelayPreserveThrottle(float throttle, int frames = 1)
     {
-        yield return new WaitForEndOfFrame();
+        for (int i = 0; i < frames; ++i)
+            yield return new WaitForEndOfFrame();
 
         vessel.ctrlState?.mainThrottle = throttle;
     }
 
+    #region Event Handlers
     public override void OnGoOnRails()
     {
-        TargetHeadingProvider ??= new FixedHeading(vessel.transform.up);
+        TargetHeading = Config.HeadingProvider.GetCurrentHeading(this);
         StartCoroutine(DelayPreserveThrottle(vessel.ctrlState.mainThrottle));
+    }
+
+    public override void OnGoOffRails()
+    {
+        TargetHeading = null;
+
+        var ctrlState = vessel.setControlStates[Vessel.GroupOverride];
+        ctrlState.mainThrottle = vessel.ctrlState.mainThrottle;
+    }
+
+    internal void OnVesselAutopilotModeChanged(
+        VesselAutopilot.AutopilotMode from,
+        VesselAutopilot.AutopilotMode to
+    )
+    {
+        if (from == to)
+            return;
+
+        TargetHeading = Config.HeadingProvider.GetCurrentHeading(this);
     }
 
     protected override void OnLoad(ConfigNode node)
@@ -146,13 +180,14 @@ public class BackgroundThrustVessel : VesselModule
 
         ConfigNode child = null;
         if (node.TryGetNode("TARGET_HEADING", ref child))
-            TargetHeadingProvider = TargetHeadingProvider.Load(node);
+            TargetHeading = TargetHeadingProvider.Load(node);
     }
 
     protected override void OnSave(ConfigNode node)
     {
         base.OnSave(node);
 
-        TargetHeadingProvider?.Save(node.AddNode("TARGET_HEADING"));
+        TargetHeading?.Save(node.AddNode("TARGET_HEADING"));
     }
+    #endregion
 }

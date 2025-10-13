@@ -1,0 +1,54 @@
+using System;
+
+namespace BackgroundThrust;
+
+/// <summary>
+/// The parameters needed to determine the change in the vessel's orbit due to
+/// its thrust.
+/// </summary>
+///
+/// <remarks>
+/// You should assume that mass was consumed (and/or) produced at a constant
+/// rate between <see cref="StartUT"/> and <see cref="StopUT"/>. Note that
+/// this doesn't mean that the vessel was accelerating at a constant rate.
+/// </remarks>
+public struct ThrustParameters
+{
+    /// <summary>
+    /// The starting UT for thrust integration.
+    /// </summary>
+    public double StartUT;
+
+    /// <summary>
+    /// The ending UT for thrust integration.
+    /// </summary>
+    public double StopUT;
+
+    /// <summary>
+    /// The vessel mass at <see cref="StartUT"/>.
+    /// </summary>
+    public double StartMass;
+
+    /// <summary>
+    /// The vessel mass at <see cref="StopUT"/>.
+    /// </summary>
+    public double StopMass;
+
+    /// <summary>
+    /// The thrust emitted by the vessel between <see cref="StartUT"/>
+    /// and <see cref="StopUT"/>.
+    /// </summary>
+    public double Thrust;
+
+    public readonly double DeltaT => StopUT - StartUT;
+    public readonly double DeltaM => StopMass - StartMass;
+
+    public readonly double ComputeDeltaV()
+    {
+        var deltaM = DeltaM;
+        if (Math.Abs(deltaM) < 1e-6)
+            return Thrust / StopMass * DeltaT;
+
+        return Thrust / deltaM * Math.Log(StopMass / StartMass) * DeltaT;
+    }
+}

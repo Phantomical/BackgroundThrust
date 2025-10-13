@@ -6,31 +6,41 @@ namespace BackgroundThrust;
 public static class OrbitMath
 {
     public static Vector3d GetOrbitProgradeAtUT(Vessel vessel, double UT) =>
-        vessel.orbit.getOrbitalVelocityAtUT(UT).normalized;
+        vessel.orbit.Prograde(UT);
 
     public static Vector3d GetOrbitRetrogradeAtUT(Vessel vessel, double UT) =>
         -GetOrbitProgradeAtUT(vessel, UT);
 
-    public static Vector3d GetOrbitNormalAtUT(Vessel vessel, double UT)
-    {
-        var ppos = vessel.mainBody.getPositionAtUT(UT);
-        var vpos = vessel.orbit.getPositionAtUT(UT);
-
-        return Vector3d.Cross(GetOrbitProgradeAtUT(vessel, UT), vpos - ppos).normalized;
-    }
+    public static Vector3d GetOrbitNormalAtUT(Vessel vessel, double UT) => vessel.orbit.Normal(UT);
 
     public static Vector3d GetOrbitAntiNormalAtUT(Vessel vessel, double UT) =>
         -GetOrbitNormalAtUT(vessel, UT);
 
-    public static Vector3d GetOrbitRadialOutAtUT(Vessel vessel, double UT)
-    {
-        var obtvel = vessel.orbit.getOrbitalVelocityAtUT(UT).normalized;
-        var ppos = vessel.mainBody.getPositionAtUT(UT);
-        var vpos = vessel.orbit.getPositionAtUT(UT);
-
-        return Vector3d.Cross(obtvel, Vector3d.Cross(obtvel, vpos - ppos)).normalized;
-    }
+    public static Vector3d GetOrbitRadialOutAtUT(Vessel vessel, double UT) =>
+        vessel.orbit.Radial(UT);
 
     public static Vector3d GetOrbitRadialInAtUT(Vessel vessel, double UT) =>
-        GetOrbitRadialOutAtUT(vessel, UT);
+        -GetOrbitRadialOutAtUT(vessel, UT);
+
+    /// <summary>
+    /// Perturbs an orbit by a <paramref name="deltaV"/> vector.
+    /// </summary>
+    internal static void Perturb(this Orbit orbit, Vector3d deltaV, double UT)
+    {
+        if (deltaV.sqrMagnitude == 0.0)
+            return;
+
+        deltaV = deltaV.xzy;
+        Vector3d pos = orbit.getRelativePositionAtUT(UT);
+
+        // Update with current position and new velocity
+        orbit.UpdateFromStateVectors(
+            pos,
+            orbit.getOrbitalVelocityAtUT(UT) + deltaV,
+            orbit.referenceBody,
+            UT
+        );
+        orbit.Init();
+        orbit.UpdateFromUT(UT);
+    }
 }

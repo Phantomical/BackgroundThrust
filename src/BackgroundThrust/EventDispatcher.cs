@@ -15,23 +15,35 @@ internal class EventDispatcher : MonoBehaviour
         }
     }
 
-    void OnStart()
+    void Start()
     {
-        GameEvents.onVesselChange.Add(OnVesselChange);
+        GameEvents.onVesselWasModified.Add(OnVesselWasModified);
+        Config.onAutopilotModeChange.Add(OnVesselAutopilotModeChanged);
     }
 
     void OnDestroy()
     {
-        GameEvents.onVesselChange.Remove(OnVesselChange);
+        GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+        Config.onAutopilotModeChange.Remove(OnVesselAutopilotModeChanged);
     }
 
-    void OnVesselChange(Vessel vessel)
+    void OnVesselWasModified(Vessel vessel)
     {
         var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
 
-        // Avoid proactively rescanning all vessel modules in onVesselChange
+        // Avoid proactively rescanning all vessel modules in onVesselWasModified
         // since that callback tends to be quite slow in KSP already.
         module.Engines = null;
+    }
+
+    internal void OnVesselAutopilotModeChanged(
+        GameEvents.HostedFromToAction<Vessel, VesselAutopilot.AutopilotMode> evt
+    )
+    {
+        var vessel = evt.host;
+        var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
+
+        module.OnVesselAutopilotModeChanged(evt.from, evt.to);
     }
 
     // Even if we clear the input locks then stock doesn't seem to want to

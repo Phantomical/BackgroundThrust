@@ -2,37 +2,6 @@ using BackgroundThrust.Utils;
 
 namespace BackgroundThrust;
 
-public struct ThrustParameters
-{
-    /// <summary>
-    /// The starting UT for thrust integration.
-    /// </summary>
-    public double StartUT;
-
-    /// <summary>
-    /// The ending UT for thrust integration.
-    /// </summary>
-    public double StopUT;
-
-    /// <summary>
-    /// The vessel mass at <see cref="StartUT"/>.
-    /// </summary>
-    public double StartMass;
-
-    /// <summary>
-    /// The vessel mass at <see cref="StopUT"/>.
-    /// </summary>
-    public double StopMass;
-
-    /// <summary>
-    /// The thrust emitted by the vessel between <see cref="StartUT"/>
-    /// and <see cref="StopUT"/>.
-    /// </summary>
-    public double Thrust;
-
-    public readonly double DeltaT => StopUT - StartUT;
-}
-
 /// <summary>
 /// A targetting module for a vessel. This controls in what direction the vessel
 /// should orient itself and, optionally, allows overriding how applied thrust
@@ -57,9 +26,41 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
     /// </returns>
     public abstract Vector3d? GetTargetHeading(BackgroundThrustVessel module, double UT);
 
-    public virtual void IntegrateThrust(BackgroundThrustVessel vessel, ThrustParameters parameters)
+    /// <summary>
+    /// Update the orbit of the current vessel to account for the change in
+    /// velocity of the vessel.
+    /// </summary>
+    /// <param name="module"></param>
+    /// <param name="parameters"></param>
+    ///
+    /// <remarks>
+    /// <para>
+    /// This provides an extension point for heading providers that have
+    /// special knowledge of how the heading vector will change over time to
+    /// apply a custom change to the orbit that takes that into account.
+    /// </para>
+    ///
+    /// <para>
+    /// The default implementation effectively applies all the thrust at the
+    /// current UT.
+    /// </para>
+    /// </remarks>
+    public virtual void IntegrateThrust(BackgroundThrustVessel module, ThrustParameters parameters)
     {
-        // throw new NotImplementedException();
+        var vessel = module.Vessel;
+        var heading = vessel.transform.up;
+
+        var deltaV = parameters.ComputeDeltaV();
+        if (double.IsNaN(deltaV) || double.IsInfinity(deltaV))
+        {
+            LogUtil.Error("deltaV was infinite or NaN");
+            return;
+        }
+
+        if (heading.sqrMagnitude == 0.0)
+            return;
+
+        vessel.orbit.Perturb(deltaV * (Vector3d)heading, parameters.StopUT);
     }
 
     public static TargetHeadingProvider Load(ConfigNode node)

@@ -2,6 +2,11 @@ namespace BackgroundThrust;
 
 public static class Config
 {
+    public static readonly EventData<GameEvents.HostedFromToAction<
+        Vessel,
+        VesselAutopilot.AutopilotMode
+    >> onAutopilotModeChange = new("onAutopilotModeChange");
+
     /// <summary>
     /// If <c>true</c> then BackgroundThrust will not perform any resource
     /// updates during <c>FixedUpdate</c>. It will then be assumed that
@@ -19,4 +24,6 @@ public static class Config
     /// in the background.
     /// </summary>
     public static bool UnloadedResourceProcessing = true;
+
+    public static ICurrentHeadingProvider HeadingProvider = new DefaultHeadingProvider();
 }

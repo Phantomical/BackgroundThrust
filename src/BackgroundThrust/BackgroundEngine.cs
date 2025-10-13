@@ -33,8 +33,6 @@ public class BackgroundEngine : PartModule
         Instance
     );
 
-    BackgroundThrustVessel vesselModule;
-
     public MultiModeEngine MultiModeEngine { get; private set; }
     public ModuleEngines Engine { get; private set; }
 
@@ -55,9 +53,6 @@ public class BackgroundEngine : PartModule
     )]
     public bool IsEnabled = true;
 
-    private Dictionary<int, PartResource> buffers = [];
-    private ResourceBroker broker = new ResourceBroker();
-
     public override void OnStart(StartState state)
     {
         base.OnStart(state);
@@ -68,16 +63,21 @@ public class BackgroundEngine : PartModule
             return;
         }
 
-        vesselModule = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
-
         FindModuleEngines();
     }
 
     internal void PackedEngineUpdate()
     {
-        if (!IsEnabled || Engine is null)
+        if (Engine is null)
         {
             Thrust = 0.0;
+            return;
+        }
+
+        if (!IsEnabled)
+        {
+            Thrust = 0.0;
+            Engine.DeactivateLoopingFX();
             return;
         }
 
