@@ -15,7 +15,7 @@ public sealed class FixedHeading() : TargetHeadingProvider
         this.heading = heading;
     }
 
-    public override Vector3d? GetTargetHeading(BackgroundThrustVessel module, double UT)
+    public override Vector3d? GetTargetHeading(double UT)
     {
         if (heading == Vector3d.zero)
             return null;

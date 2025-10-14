@@ -9,17 +9,40 @@ namespace BackgroundThrust;
 /// should orient itself and, optionally, allows overriding how applied thrust
 /// is integrated into the orbit.
 /// </summary>
+///
+/// <remarks>
+/// <para>
+/// There are some things you need to keep in mind when writing a new heading
+/// provider:
+/// <list type="number">
+///  <item>
+///   It must have a zero-argument constructor. The deserialization code will
+///   use the default constructor and then call <c>OnLoad</c>.
+///  </item>
+///  <item>
+///   If <see cref="GetTargetHeading"/> returns <c>null</c> then the vessel
+///   will cut thrust and remove the target heading, as well as printing a
+///   message to the screen about the maneuver being complete.
+///  </item>
+/// </list>
+/// </para>
+///
+/// <para>
+/// If you have a planned trajectory that involves multiple different burns
+/// then you will need to create and add a new <see cref="TargetHeadingProvider"/>
+/// at the start of each individual burn in the sequence.
+/// </para>
+/// </remarks>
 public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHeadingProvider>
 {
+    /// <summary>
+    /// The vessel that this heading provider is controlling.
+    /// </summary>
     public Vessel Vessel;
 
     /// <summary>
     /// Get the current target heading for the vessel.
     /// </summary>
-    /// <param name="module">
-    ///   The <see cref="BackgroundThrustVessel" /> that this heading provider
-    ///   is attached to.
-    /// </param>
     /// <param name="UT">
     ///   The current universal time. May not necessarily be equal to
     ///   <c><see cref="Planetarium.GetUniversalTime"/>()</c>.
@@ -28,7 +51,7 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
     ///   A vector representing the target thrust direction, or <c>null</c> if
     ///   the vessel should stop thrust.
     /// </returns>
-    public abstract Vector3d? GetTargetHeading(BackgroundThrustVessel module, double UT);
+    public abstract Vector3d? GetTargetHeading(double UT);
 
     /// <summary>
     /// Update the orbit of the current vessel to account for the change in

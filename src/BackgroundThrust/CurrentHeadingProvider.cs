@@ -51,6 +51,15 @@ public class DefaultHeadingProvider : ICurrentHeadingProvider
                     return new OrbitRadialOut();
                 break;
 
+            case AutopilotMode.Target:
+                if (vessel.targetObject is not null)
+                    return new Target(vessel.targetObject);
+                break;
+            case AutopilotMode.AntiTarget:
+                if (vessel.targetObject is not null)
+                    return new Target(vessel.targetObject);
+                break;
+
             default:
                 break;
         }

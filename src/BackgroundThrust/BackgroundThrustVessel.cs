@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using BackgroundThrust.Heading;
+using BackgroundThrust.Utils;
 using UnityEngine;
 
 namespace BackgroundThrust;
@@ -47,7 +48,7 @@ public class BackgroundThrustVessel : VesselModule
     /// </summary>
     public double? DryMass = 0.0;
 
-    public TargetHeadingProvider TargetHeading;
+    public TargetHeadingProvider TargetHeading { get; private set; }
 
     private List<BackgroundEngine> _engines = null;
     public List<BackgroundEngine> Engines
@@ -90,6 +91,19 @@ public class BackgroundThrustVessel : VesselModule
                 Config.onUnloadedThrustStopped.Fire(this);
         }
     }
+
+    public void SetTargetHeading(TargetHeadingProvider heading) =>
+        SetTargetHeading(heading, Planetarium.GetUniversalTime());
+
+    public void SetTargetHeading(TargetHeadingProvider heading, double UT)
+    {
+        if (TargetHeading is null)
+            LastUpdateTime = Math.Max(LastUpdateTime, UT);
+
+        enabled = true;
+        heading.Vessel = Vessel;
+        TargetHeading = heading;
+    }
     #endregion
 
     #region FixedUpdate for unpacked vessels
@@ -118,12 +132,29 @@ public class BackgroundThrustVessel : VesselModule
 
         TargetHeading ??= GetFixedHeading();
 
-        if (TargetHeading.GetTargetHeading(this, now) is not Vector3d target)
+        if (TargetHeading.GetTargetHeading(now) is not Vector3d target)
         {
-            vessel.ctrlState.mainThrottle = 0f;
-
+            PackedCutThrottle();
             ScreenMessages.PostScreenMessage("Maneuver Complete. Cutting thrust.");
-            TimeWarp.SetRate(0, instant: true);
+            return;
+        }
+
+        // Protect against invalid heading vectors before they cause the vessel
+        // to get deleted because its state is NaN.
+        var mag2 = target.sqrMagnitude;
+        if (mag2 == 0.0 || double.IsInfinity(mag2) || double.IsNaN(mag2))
+        {
+            var tname = TargetHeading.GetType().Name;
+
+            if (double.IsInfinity(mag2))
+                LogUtil.Error($"{tname}.GetTargetHeading returned infinite heading vector");
+            else if (double.IsNaN(mag2))
+                LogUtil.Error($"{tname}.GetTargetHeading returned NaN heading vector");
+            else
+                LogUtil.Error($"{tname}.GetTargetHeading returned zero heading vector");
+
+            PackedCutThrottle();
+            ScreenMessages.PostScreenMessage("Recieved invalid heading vector. Cutting thrust.");
             return;
         }
 
@@ -154,6 +185,13 @@ public class BackgroundThrustVessel : VesselModule
         TargetHeading.IntegrateThrust(this, parameters);
         LastUpdateTime = now;
     }
+
+    private void PackedCutThrottle()
+    {
+        vessel.ctrlState.mainThrottle = 0f;
+        TargetHeading = null;
+        TimeWarp.SetRate(0, instant: true);
+    }
     #endregion
 
     #region Unloaded Vessel Handling
@@ -171,6 +209,9 @@ public class BackgroundThrustVessel : VesselModule
             enabled = false;
             return;
         }
+
+        if (UT <= LastUpdateTime)
+            return;
 
         var lastUpdateTime = LastUpdateTime;
         var lastUpdateMass = LastUpdateMass;
@@ -190,6 +231,13 @@ public class BackgroundThrustVessel : VesselModule
         if (currentMass <= 0.0)
         {
             LastUpdateMass = lastUpdateMass;
+            SetThrust(0.0, UT);
+            return;
+        }
+
+        if (TargetHeading.GetTargetHeading(UT) is null)
+        {
+            TargetHeading = null;
             SetThrust(0.0, UT);
             return;
         }
@@ -259,7 +307,7 @@ public class BackgroundThrustVessel : VesselModule
         // If we are actively thrusting towards a heading then rotate the vessel
         // to point that way.
         var now = Planetarium.GetUniversalTime();
-        if (TargetHeading?.GetTargetHeading(this, now) is Vector3d target)
+        if (TargetHeading?.GetTargetHeading(now) is Vector3d target)
         {
             // Make sure that the vessel is pointing in the target direction.
             vessel.transform.Rotate(
