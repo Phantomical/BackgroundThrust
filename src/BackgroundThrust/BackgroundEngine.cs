@@ -1,14 +1,7 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Net.Cache;
 using System.Reflection;
-using System.Runtime.Serialization.Formatters;
 using BackgroundThrust.Patches;
-using CommNet.Network;
-using Steamworks;
 using UnityEngine;
 
 namespace BackgroundThrust;
@@ -69,7 +62,7 @@ public class BackgroundEngine : PartModule
 
     internal void OnMultiModeEngineSwitchActive()
     {
-        if (MultiModeEngine is not null)
+        if (MultiModeEngine is null)
             return;
 
         if (MultiModeEngine.runningPrimary)
@@ -349,54 +342,5 @@ public class BackgroundEngine : PartModule
         {
             Engine = part.FindModuleImplementing<ModuleEngines>();
         }
-    }
-
-    /// <summary>
-    /// Get the list of resources that would be requested by this engine at the
-    /// provided throttle.
-    /// </summary>
-    /// <param name="throttle"></param>
-    /// <returns></returns>
-    public ResourceRequest[] GetEngineFuelRequests(double throttle)
-    {
-        if (throttle <= 0.0 || Engine is null)
-            return [];
-
-        double mass = GetRequiredPropellantMass(Engine, (float)throttle);
-        double required = mass * Engine.mixtureDensityRecip;
-        if (required <= 0.0)
-            return [];
-
-        var requests = new ResourceRequest[Engine.propellants.Count];
-        for (int i = 0; i < requests.Length; ++i)
-        {
-            var propellant = Engine.propellants[i];
-
-            var request = new ResourceRequest
-            {
-                ResourceId = propellant.resourceDef.id,
-                Amount = propellant.ratio * required,
-                FlowMode = propellant.GetFlowMode(),
-            };
-
-            requests[i] = request;
-        }
-
-        return requests;
-    }
-
-    private static double GetRequiredPropellantMass(ModuleEngines engine, float throttle) =>
-        ModuleEngines_Patch.RequiredPropellantMass(engine, throttle);
-
-    [DebuggerDisplay("{ResourceName} {Amount}")]
-    public struct ResourceRequest
-    {
-        public int ResourceId;
-        public double Amount;
-        public ResourceFlowMode FlowMode;
-
-        // Available for debugging only.
-        private readonly string ResourceName =>
-            PartResourceLibrary.Instance?.GetDefinition(ResourceId)?.name;
     }
 }

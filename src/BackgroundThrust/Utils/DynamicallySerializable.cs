@@ -1,13 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace BackgroundThrust.Utils;
-
-public class DynamicallySerializable
-{
-    internal static readonly object Mutex = new();
-}
 
 /// <summary>
 /// A helper class for types which can be generically deserialized from a
@@ -16,36 +10,21 @@ public class DynamicallySerializable
 /// <see cref="OnLoad"/> and <see cref="OnSave"/> if you need to.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public abstract class DynamicallySerializable<T> : DynamicallySerializable
+public abstract class DynamicallySerializable<T>
     where T : DynamicallySerializable<T>
 {
-    private static readonly ReaderWriterLockSlim rwlock = new();
     private static Dictionary<string, Type> registry = [];
 
     private readonly BaseFieldList fields;
 
     protected DynamicallySerializable()
     {
-        // This runs in parallel when running tests. We can prevent this
-        // from being an issue here by just adding a lock.
-        //
-        // This is not an issue when running this in KSP because everything
-        // happens in a single thread there.
-        lock (Mutex)
-        {
-            fields = new(this);
-        }
+        fields = new(this);
     }
 
-    protected virtual void OnLoad(ConfigNode node)
-    {
-        fields.Load(node);
-    }
+    protected virtual void OnLoad(ConfigNode node) => fields.Load(node);
 
-    protected virtual void OnSave(ConfigNode node)
-    {
-        fields.Save(node);
-    }
+    protected virtual void OnSave(ConfigNode node) => fields.Save(node);
 
     public void Save(ConfigNode node)
     {
@@ -55,30 +34,19 @@ public abstract class DynamicallySerializable<T> : DynamicallySerializable
 
     protected static T Load(ConfigNode node, Action<T> preload = null)
     {
-        Type type;
-
-        try
+        string name = null;
+        if (!node.TryGetValue("name", ref name))
         {
-            rwlock.EnterReadLock();
-
-            string name = null;
-            if (!node.TryGetValue("name", ref name))
-            {
-                LogUtil.Error("ConfigNode has no `name` field");
-                return null;
-            }
-
-            if (!registry.TryGetValue(name, out type))
-            {
-                LogUtil.Error(
-                    $"Attempted to load a ConfigNode with name `{name}` but no type has been registered with that name"
-                );
-                return null;
-            }
+            LogUtil.Error("ConfigNode has no `name` field");
+            return null;
         }
-        finally
+
+        if (!registry.TryGetValue(name, out var type))
         {
-            rwlock.ExitReadLock();
+            LogUtil.Error(
+                $"Attempted to load a ConfigNode with name `{name}` but no type has been registered with that name"
+            );
+            return null;
         }
 
         var inst = (T)Activator.CreateInstance(type);
@@ -88,48 +56,41 @@ public abstract class DynamicallySerializable<T> : DynamicallySerializable
         return inst;
     }
 
-    protected static void RegisterAll(IEnumerable<Type> types)
+    protected static void RegisterAll()
     {
         Dictionary<string, Type> entries = [];
-        var baseType = typeof(DynamicallySerializable<T>);
 
-        foreach (var type in types)
+        foreach (var assembly in AssemblyLoader.loadedAssemblies)
         {
-            if (!type.IsSubclassOf(baseType))
+            foreach (var type in assembly.assembly.GetTypes())
             {
-                LogUtil.Error(
-                    $"Type {type.Name} does not inherit from DynamicallySerializable<{typeof(T).Name}>"
-                );
-                continue;
+                if (!type.IsSubclassOf(typeof(T)))
+                    continue;
+                if (type.IsGenericTypeDefinition)
+                    continue;
+                if (type.IsAbstract)
+                    continue;
+
+                if (type.GetConstructor(Type.EmptyTypes) == null)
+                {
+                    LogUtil.Error($"Type {type.Name} does not have a default constructor");
+                    continue;
+                }
+
+                if (entries.ContainsKey(type.Name))
+                {
+                    var other = entries[type.Name];
+
+                    LogUtil.Error(
+                        $"Name conflict: types {type.FullName} and {other.FullName} both have name {type.Name}"
+                    );
+                    continue;
+                }
+
+                entries.Add(type.Name, type);
             }
-
-            if (type.GetConstructor(Type.EmptyTypes) == null)
-            {
-                LogUtil.Error($"Type {type.Name} does not have a default constructor");
-                continue;
-            }
-
-            if (entries.ContainsKey(type.Name))
-            {
-                var other = entries[type.Name];
-
-                LogUtil.Error(
-                    $"Name conflict: types {type.FullName} and {other.FullName} both have name {type.Name}"
-                );
-                continue;
-            }
-
-            entries.Add(type.Name, type);
         }
 
-        try
-        {
-            rwlock.EnterWriteLock();
-            registry = entries;
-        }
-        finally
-        {
-            rwlock.ExitWriteLock();
-        }
+        registry = entries;
     }
 }

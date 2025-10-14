@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using BackgroundThrust.Utils;
 
 namespace BackgroundThrust;
@@ -53,13 +55,14 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
         var heading = vessel.transform.up;
 
         var deltaV = parameters.ComputeDeltaV();
-        if (double.IsNaN(deltaV) || double.IsInfinity(deltaV))
+        if (!IsFinite(deltaV))
         {
             LogUtil.Error("deltaV was infinite or NaN");
             return;
         }
 
-        if (heading.sqrMagnitude == 0.0)
+        var mag2 = heading.sqrMagnitude;
+        if (mag2 == 0.0 || !IsFinite(mag2))
             return;
 
         vessel.orbit.Perturb(deltaV * (Vector3d)heading, parameters.StopUT);
@@ -67,4 +70,9 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
 
     public static TargetHeadingProvider Load(Vessel vessel, ConfigNode node) =>
         Load(node, provider => provider.Vessel = vessel);
+
+    internal static new void RegisterAll() =>
+        DynamicallySerializable<TargetHeadingProvider>.RegisterAll();
+
+    private static bool IsFinite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
 }

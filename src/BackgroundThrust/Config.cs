@@ -8,6 +8,20 @@ public static class Config
     >> onAutopilotModeChange = new("onAutopilotModeChange");
 
     /// <summary>
+    /// This event is fired when thrust changes from 0 to non-zero on an unloaded vessel.
+    /// </summary>
+    public static readonly EventData<BackgroundThrustVessel> onUnloadedThrustStarted = new(
+        "onUnloadedThrustStarted"
+    );
+
+    /// <summary>
+    /// This event is fired when the thrust goes to 0 on an unloaded vessel.
+    /// </summary>
+    public static readonly EventData<BackgroundThrustVessel> onUnloadedThrustStopped = new(
+        "onUnloadedThrustStopped"
+    );
+
+    /// <summary>
     /// If <c>true</c> then BackgroundThrust will not perform any resource
     /// updates during <c>FixedUpdate</c>. It will then be assumed that
     /// some other method is setting the <c>Thrust</c> field appropriately.

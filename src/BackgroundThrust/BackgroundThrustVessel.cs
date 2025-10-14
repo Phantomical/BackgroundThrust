@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using BackgroundThrust.Heading;
@@ -28,7 +29,7 @@ public class BackgroundThrustVessel : VesselModule
     ///
     /// <remarks>
     /// It will automatically be updated while the ship is loaded, if you are
-    /// implementing background processing then use <see cref="SetThrust"/> to
+    /// implementing background processing then use <see cref="SetThrust(double)"/> to
     /// set this while the ship is unloaded.
     /// </remarks>
     public double Thrust => thrust;
@@ -41,10 +42,10 @@ public class BackgroundThrustVessel : VesselModule
     public double? MassChangeRate;
 
     /// <summary>
-    /// The dry mass of the vessel. This is only used for background processing
-    /// and is not updated when the module is loaded.
+    /// The known dry mass of the vessel. This is only updated when the vessel
+    /// is unloaded.
     /// </summary>
-    public double? DryMass;
+    public double? DryMass = 0.0;
 
     public TargetHeadingProvider TargetHeading;
 
@@ -66,15 +67,28 @@ public class BackgroundThrustVessel : VesselModule
     }
 
     #region Getters and Setters
-    public void SetThrust(double thrust)
-    {
-        if (this.thrust == 0.0)
-            LastUpdateTime = Planetarium.GetUniversalTime();
+    public void SetThrust(double thrust) => SetThrust(thrust, Planetarium.GetUniversalTime());
 
-        if (thrust > 0.0 && TargetHeading is not null && enabled)
+    public void SetThrust(double thrust, double UT)
+    {
+        var wasZero = this.thrust == 0.0;
+        var nowZero = thrust == 0.0;
+
+        if (wasZero)
+            LastUpdateTime = Math.Max(LastUpdateTime, UT);
+
+        if (!nowZero && TargetHeading is not null)
             enabled = true;
 
         this.thrust = thrust;
+
+        if (!vessel.loaded)
+        {
+            if (wasZero && !nowZero)
+                Config.onUnloadedThrustStarted.Fire(this);
+            else if (!wasZero && nowZero)
+                Config.onUnloadedThrustStopped.Fire(this);
+        }
     }
     #endregion
 
@@ -102,7 +116,7 @@ public class BackgroundThrustVessel : VesselModule
         if (lastUpdateTime == 0.0)
             return;
 
-        TargetHeading ??= new FixedHeading(vessel.transform.up) { Vessel = vessel };
+        TargetHeading ??= GetFixedHeading();
 
         if (TargetHeading.GetTargetHeading(this, now) is not Vector3d target)
         {
@@ -126,7 +140,7 @@ public class BackgroundThrustVessel : VesselModule
             engine.PackedEngineUpdate();
             thrust += engine.Thrust;
         }
-        this.thrust = thrust;
+        SetThrust(thrust, now);
 
         var parameters = new ThrustParameters
         {
@@ -162,7 +176,7 @@ public class BackgroundThrustVessel : VesselModule
         var lastUpdateMass = LastUpdateMass;
         LastUpdateTime = UT;
 
-        var deltaT = UT - LastUpdateTime;
+        var deltaT = UT - lastUpdateTime;
         if (deltaT <= 0.0)
             return;
         if (MassChangeRate is not double rate)
@@ -170,14 +184,13 @@ public class BackgroundThrustVessel : VesselModule
 
         var deltaM = rate * deltaT;
         var currentMass = lastUpdateMass + deltaM;
-        var dryMass = DryMass ?? 0.0;
 
         LastUpdateMass = currentMass;
 
-        if (currentMass <= dryMass)
+        if (currentMass <= 0.0)
         {
             LastUpdateMass = lastUpdateMass;
-            thrust = 0.0;
+            SetThrust(0.0, UT);
             return;
         }
 
@@ -195,7 +208,6 @@ public class BackgroundThrustVessel : VesselModule
     #endregion
 
     #region Helpers
-
     private IEnumerator DelayPreserveThrottle(float throttle, int frames = 1)
     {
         for (int i = 0; i < frames; ++i)
@@ -211,12 +223,17 @@ public class BackgroundThrustVessel : VesselModule
         return provider;
     }
 
-    private double GetVesselDryMass()
+    public FixedHeading GetFixedHeading()
     {
-        if (vessel == null)
+        return new(vessel.transform.up) { Vessel = vessel };
+    }
+
+    public double ComputeDryMass()
+    {
+        if (vessel is null)
             return 0.0;
 
-        double mass = 0f;
+        var mass = 0.0;
         foreach (var part in vessel.parts)
             mass += part.mass;
 
@@ -228,10 +245,7 @@ public class BackgroundThrustVessel : VesselModule
     protected override void OnStart()
     {
         if (vessel.loaded)
-        {
             MassChangeRate = null;
-            DryMass = null;
-        }
 
         if (LastUpdateTime == 0.0)
         {
@@ -291,7 +305,7 @@ public class BackgroundThrustVessel : VesselModule
 
     public override void OnUnloadVessel()
     {
-        DryMass ??= GetVesselDryMass();
+        DryMass = ComputeDryMass();
     }
 
     protected override void OnLoad(ConfigNode node)
@@ -309,6 +323,7 @@ public class BackgroundThrustVessel : VesselModule
         double massChangeRate = 0.0;
         if (node.TryGetValue(nameof(MassChangeRate), ref massChangeRate))
             MassChangeRate = massChangeRate;
+
         double dryMass = 0.0;
         if (node.TryGetValue(nameof(DryMass), ref dryMass))
             DryMass = dryMass;
@@ -318,21 +333,18 @@ public class BackgroundThrustVessel : VesselModule
     {
         base.OnSave(node);
 
-        if (vessel.loaded)
-            DryMass ??= GetVesselDryMass();
-
-        TargetHeading?.Save(node.AddNode("TARGET_HEADING"));
+        TargetHeading ??= GetFixedHeading();
+        TargetHeading.Save(node.AddNode("TARGET_HEADING"));
 
         if (vessel?.ctrlState?.mainThrottle is float throttle)
             node.AddValue("throttle", throttle);
         if (MassChangeRate is double massChangeRate)
             node.AddValue(nameof(MassChangeRate), massChangeRate);
 
-        double? dryMass = DryMass;
         if (vessel.loaded)
-            dryMass ??= GetVesselDryMass();
-        if (dryMass is double mass)
-            node.AddValue(nameof(DryMass), mass);
+            DryMass = ComputeDryMass();
+        if (DryMass is double dryMass)
+            node.AddValue(nameof(DryMass), dryMass);
     }
     #endregion
 }
