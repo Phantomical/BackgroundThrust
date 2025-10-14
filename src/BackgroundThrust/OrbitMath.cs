@@ -17,10 +17,10 @@ public static class OrbitMath
         -GetOrbitNormalAtUT(vessel, UT);
 
     public static Vector3d GetOrbitRadialOutAtUT(Vessel vessel, double UT) =>
-        vessel.orbit.Radial(UT);
+        -GetOrbitRadialInAtUT(vessel, UT);
 
     public static Vector3d GetOrbitRadialInAtUT(Vessel vessel, double UT) =>
-        -GetOrbitRadialOutAtUT(vessel, UT);
+        vessel.orbit.Radial(UT);
 
     /// <summary>
     /// Perturbs an orbit by a <paramref name="deltaV"/> vector.
