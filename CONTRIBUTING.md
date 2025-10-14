@@ -7,6 +7,26 @@ along with your current mod list. For best results, follow the instructions at
 
 [0]: https://forum.kerbalspaceprogram.com/topic/163863-how-to-get-support/
 
+## Installing Dependencies
+Background Thrust has integrations with some other mods. Some of these conflict
+so they cannot all be installed in the same installation. As such, there is a
+script that installs these dependencies into a few fake CKAN installs that you
+will need to run before you can build anything.
+
+On Windows, run
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\setup-deps.ps1 -ckan path\to\ckan.exe
+```
+
+On Linux/MacOS run
+```bash
+./setup-deps.sh
+```
+
+These must be run in the repository root. They will create some fake ckan
+installs under `deps/installs` and install the relevant mods within.
+
 
 ## Building
 In order to build the mod you will need:
