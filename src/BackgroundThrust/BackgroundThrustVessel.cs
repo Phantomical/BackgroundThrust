@@ -101,12 +101,12 @@ public class BackgroundThrustVessel : VesselModule
         if (TargetHeading is null)
             LastUpdateTime = Math.Max(LastUpdateTime, UT);
 
-        if (throttle > 0.0)
+        if (heading is not null)
             enabled = true;
 
         var prev = TargetHeading;
 
-        heading.Vessel = Vessel;
+        heading?.Vessel = Vessel;
         TargetHeading = heading;
 
         if (!ReferenceEquals(prev, heading))

@@ -27,9 +27,9 @@
         <Reference Include="Kerbalism.dll">
             <HintPath>$(DepSet2)\Kerbalism\Kerbalism112.kbin</HintPath>
             <Private>false</Private>
-            <CKANIdentifier>BackgroundResourceProcessing</CKANIdentifier>
-            <KSPAssemblyName>BackgroundResourceProcessing</KSPAssemblyName>
-            <KSPAssemblyVersion>0.2.0</KSPAssemblyVersion>
+            <CKANIdentifier>Kerbalism</CKANIdentifier>
+            <KSPAssemblyName>Kerbalism</KSPAssemblyName>
+            <KSPAssemblyVersion>0.0.0</KSPAssemblyVersion>
         </Reference>
 
         <InternalsVisibleTo Include="BackgroundResourceProcessing.Test" />

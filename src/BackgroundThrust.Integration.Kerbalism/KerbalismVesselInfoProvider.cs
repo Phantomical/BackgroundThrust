@@ -2,28 +2,29 @@ using System;
 using BackgroundThrust.Integration.Kerbalism.Patches;
 using KERBALISM;
 using KSP.Localization;
-using Mono.Cecil;
 
 namespace BackgroundThrust.Integration.Kerbalism;
 
 using ResourceBroker = KERBALISM.ResourceBroker;
 using ResourceCache = KERBALISM.ResourceCache;
 
-public class KerbalismVesselInfoProvider : VesselInfoProvider
+public class KerbalismVesselInfoProvider : StockVesselInfoProvider
 {
     public static ResourceBroker EngineBroker = ResourceBroker.GetOrCreate(
         "bt-engine",
         ResourceBroker.BrokerCategory.Unknown,
-        Localizer.Format("#BT_Kerbalism_BrokerTitle")
+        Localizer.Format("#LOC_BT_Kerbalism_BrokerTitle")
     );
 
     public override bool AllowBackground => true;
+
+    public override bool DisableOnZeroThrustInBackground => false;
 
     public override double GetVesselMass(BackgroundThrustVessel module, double UT)
     {
         var vessel = module.Vessel;
         if (vessel.loaded)
-            return vessel.totalMass;
+            return base.GetVesselMass(module, UT);
 
         var vd = vessel.KerbalismData();
         var dryMass = module.DryMass ?? vessel.totalMass;
@@ -56,8 +57,9 @@ public class KerbalismVesselInfoProvider : VesselInfoProvider
     public override double GetVesselThrust(BackgroundThrustVessel module, double UT)
     {
         var vessel = module.Vessel;
-        var info = ResourceCache.GetResource(vessel, "BackgroundThrust");
+        if (vessel.loaded)
+            return base.GetVesselThrust(module, UT);
 
-        return info.AverageRate;
+        return ResourceCache.GetResource(vessel, "BackgroundThrust")?.AverageRate ?? 0.0;
     }
 }

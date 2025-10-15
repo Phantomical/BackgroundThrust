@@ -126,8 +126,7 @@ public class BackgroundEngine : PartModule
             return;
         }
 
-        if (Config.LoadedResourceProcessing)
-            engine.finalThrust = engine.CalculateThrust() * vessel.VesselValues.EnginePower.value;
+        engine.finalThrust = engine.CalculateThrust() * vessel.VesselValues.EnginePower.value;
         if (engine.finalThrust > 0f)
         {
             IsThrustingField.SetValue(engine, true);

@@ -19,10 +19,6 @@ internal static class Kerbalism_Patch
 
     static Dictionary<int, ResourceInfo> GetResourcesBase(VesselResources v) => null;
 
-    static double? MakeValue(double value) => value;
-
-    static double? MakeNull() => null;
-
     [HarmonyReversePatch]
     [HarmonyPatch(typeof(Kerbalism_Patch), nameof(GetLastUpdateTimeBase))]
     internal static double? GetLastUpdateTime(Guid vesselId)
@@ -34,15 +30,20 @@ internal static class Kerbalism_Patch
         )
         {
             var kerbalism = typeof(KERBALISM.Kerbalism);
-            var unloadedData = kerbalism.GetNestedType("Unloaded_data");
+            var unloadedData = kerbalism.GetNestedType(
+                "Unloaded_data",
+                BindingFlags.NonPublic | BindingFlags.Public
+            );
             var dict = typeof(Dictionary<,>).MakeGenericType(typeof(Guid), unloadedData);
             var tryGetValueMethod = dict.GetMethod("TryGetValue");
 
             var unloadedField = kerbalism.GetField("unloaded", Static);
             var timeField = unloadedData.GetField("time", Instance);
+            var ctor = typeof(double?).GetConstructor([typeof(double)]);
 
             var value = gen.DeclareLocal(unloadedData);
-            var labelF = gen.DefineLabel();
+            var nullable = gen.DeclareLocal(typeof(double?));
+            var exit = gen.DefineLabel();
 
             // What we're trying to generate here is effectively
             //
@@ -55,24 +56,25 @@ internal static class Kerbalism_Patch
 
             return
             [
+                // double? nullable;
+                // bool cond = Kerbalism.unloaded.TryGetValue(vesselId, out var data)
                 new CodeInstruction(OpCodes.Ldsfld, unloadedField),
                 new CodeInstruction(OpCodes.Ldarg_0),
-                new CodeInstruction(OpCodes.Ldloca_S, (byte)value.LocalIndex),
+                Ldloca(value),
                 new CodeInstruction(OpCodes.Call, tryGetValueMethod),
-                new CodeInstruction(OpCodes.Brfalse, labelF),
-                // True branch
-                new CodeInstruction(OpCodes.Ldloc_S, (byte)value.LocalIndex),
-                new CodeInstruction(OpCodes.Ldfld, unloadedField),
-                new CodeInstruction(
-                    OpCodes.Call,
-                    SymbolExtensions.GetMethodInfo(() => MakeValue(0.0))
-                ),
-                new CodeInstruction(OpCodes.Ret),
-                // False branch
-                new CodeInstruction(
-                    OpCodes.Call,
-                    SymbolExtensions.GetMethodInfo(() => MakeNull())
-                ).WithLabels(labelF),
+                // if (!cond) goto exit;
+                new CodeInstruction(OpCodes.Brfalse_S, exit),
+                // if (data is null) goto exit;
+                Ldloc(value),
+                new CodeInstruction(OpCodes.Brfalse_S, exit),
+                // nullable = data.time;
+                Ldloca(nullable),
+                Ldloc(value),
+                new CodeInstruction(OpCodes.Ldfld, timeField),
+                new CodeInstruction(OpCodes.Call, ctor),
+                // exit:
+                // return nullable;
+                new CodeInstruction(OpCodes.Ldloc_S, (byte)nullable.LocalIndex).WithLabels(exit),
                 new CodeInstruction(OpCodes.Ret),
             ];
         }
@@ -100,5 +102,95 @@ internal static class Kerbalism_Patch
 #pragma warning restore CS8321 // Local function is declared but never used
 
         return null;
+    }
+
+    private static CodeInstruction Ldloc(LocalBuilder local)
+    {
+        return local.LocalIndex switch
+        {
+            0 => new CodeInstruction(OpCodes.Ldloc_0),
+            1 => new CodeInstruction(OpCodes.Ldloc_1),
+            2 => new CodeInstruction(OpCodes.Ldloc_2),
+            3 => new CodeInstruction(OpCodes.Ldloc_3),
+            var i => i >= 0 && i < 256
+                ? new CodeInstruction(OpCodes.Ldloc_S, (byte)i)
+                : new CodeInstruction(OpCodes.Ldloc, i),
+        };
+    }
+
+    private static CodeInstruction Ldloca(LocalBuilder local)
+    {
+        var i = local.LocalIndex;
+        return i >= 0 && i < 256
+            ? new CodeInstruction(OpCodes.Ldloca_S, (byte)i)
+            : new CodeInstruction(OpCodes.Ldloca, i);
+    }
+}
+
+[HarmonyPatch(typeof(VesselResources), nameof(VesselResources.Sync))]
+internal static class VesselResources_Sync_Patch
+{
+    static readonly FieldInfo PtsField = typeof(ResourceInfo).GetField(
+        "pts",
+        BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public
+    );
+
+    static IEnumerable<CodeInstruction> Transpiler(
+        IEnumerable<CodeInstruction> instructions,
+        ILGenerator gen
+    )
+    {
+        var loadedField = typeof(Vessel).GetField("loaded");
+        var matcher = new CodeMatcher(instructions, gen);
+        matcher
+            .MatchStartForward(
+                new CodeMatch(inst =>
+                {
+                    if (inst.opcode != OpCodes.Ldfld)
+                        return false;
+
+                    if (inst.operand is not FieldInfo field)
+                        return false;
+
+                    return field == loadedField;
+                })
+            )
+            .ThrowIfInvalid("Could not find load of Vessel.loaded")
+            .Insert(
+                new CodeInstruction(OpCodes.Dup),
+                new CodeInstruction(OpCodes.Ldarg_0),
+                new CodeInstruction(
+                    OpCodes.Call,
+                    SymbolExtensions.GetMethodInfo(() => AddNullSyncSet(null, null))
+                )
+            );
+
+        return matcher.Instructions();
+    }
+
+    static void AddNullSyncSet(Vessel v, VesselResources resources)
+    {
+        var info = resources.GetResource(v, "BackgroundThrust");
+        var pts = (ResourceInfo.PriorityTankSets)PtsField.GetValue(info);
+        var wrap = VirtualWrap.Instance;
+        wrap.amount = info.Amount;
+        pts.Add(wrap, 0);
+    }
+
+    public class VirtualWrap : ResourceInfo.Wrap
+    {
+        public static VirtualWrap Instance = new();
+
+        public override double amount { get; set; }
+        public override double maxAmount
+        {
+            get => double.PositiveInfinity;
+            set { }
+        }
+
+        public override void Reset()
+        {
+            amount = 0.0;
+        }
     }
 }
