@@ -28,15 +28,12 @@ public class BackgroundEngineBehaviour : ConstantConverter
     public override ConverterResources GetResources(VesselState state)
     {
         var module = EventDispatcher.Instance.GetVesselModule(Vessel);
-        var throttle = Throttle ?? module.Throttle;
-        if (module.Throttle == 0.0)
+        var throttle = UtilMath.Clamp01(Throttle ?? module.Throttle);
+        if (module.TargetHeading is null)
             throttle = 0.0;
 
         if (throttle >= 1.0)
             return base.GetResources(state);
-
-        if (throttle < 0.0)
-            throttle = 0.0;
 
         var inputs = new List<ResourceRatio>(Inputs.Count);
         var outputs = new List<ResourceRatio>(Outputs.Count);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BackgroundResourceProcessing;
+using BackgroundThrust.Heading;
 using UnityEngine;
 using UnityEngine.Rendering;
 using VehiclePhysics;
@@ -86,6 +87,7 @@ public class EventDispatcher : MonoBehaviour
     {
         BackgroundResourceProcessor.onVesselChangepoint.Add(OnVesselChangepoint);
         Config.onBackgroundThrottleChanged.Add(OnBackgroundThrottleChanged);
+        Config.onHeadingChanged.Add(OnHeadingChanged);
         GameEvents.onVesselDestroy.Add(OnVesselDestroy);
     }
 
@@ -93,6 +95,7 @@ public class EventDispatcher : MonoBehaviour
     {
         BackgroundResourceProcessor.onVesselChangepoint.Remove(OnVesselChangepoint);
         Config.onBackgroundThrottleChanged.Add(OnBackgroundThrottleChanged);
+        Config.onHeadingChanged.Add(OnHeadingChanged);
         GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
 
         Instance = null;
@@ -121,6 +124,35 @@ public class EventDispatcher : MonoBehaviour
                 continue;
 
             converter.NextChangepoint = Planetarium.GetUniversalTime();
+            dirty = true;
+        }
+
+        if (dirty)
+            processor.MarkDirty();
+    }
+
+    void OnHeadingChanged(
+        GameEvents.HostedFromToAction<BackgroundThrustVessel, TargetHeadingProvider> evt
+    )
+    {
+        var vessel = evt.host.Vessel;
+        if (vessel.loaded)
+            return;
+
+        // We only care about changing from null -> not null and vice versa
+        if (evt.from is null == evt.to is null)
+            return;
+
+        var now = Planetarium.GetUniversalTime();
+        var processor = vessel.FindVesselModuleImplementing<BackgroundResourceProcessor>();
+        var dirty = false;
+
+        foreach (var converter in processor.Converters)
+        {
+            if (converter.Behaviour is not BackgroundEngineBehaviour)
+                continue;
+
+            converter.NextChangepoint = now;
             dirty = true;
         }
 

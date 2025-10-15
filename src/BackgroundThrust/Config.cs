@@ -1,3 +1,5 @@
+using static GameEvents;
+
 namespace BackgroundThrust;
 
 public static class Config
@@ -10,10 +12,17 @@ public static class Config
     /// <summary>
     /// This event is emitted when the throttle is changed on the vessel.
     /// </summary>
-    public static readonly EventData<GameEvents.HostedFromToAction<
-        BackgroundThrustVessel,
-        double
-    >> onBackgroundThrottleChanged = new("onBackgroundThrottleChanged");
+    public static readonly EventData<
+        HostedFromToAction<BackgroundThrustVessel, double>
+    > onBackgroundThrottleChanged = new("onBackgroundThrottleChanged");
+
+    /// <summary>
+    /// This event is emitted when the target heading provider on the vessel
+    /// changes.
+    /// </summary>
+    public static readonly EventData<
+        HostedFromToAction<BackgroundThrustVessel, TargetHeadingProvider>
+    > onHeadingChanged = new("onBackgroundHeadingChanged");
 
     public static VesselInfoProvider VesselInfoProvider = new StockVesselInfoProvider();
 

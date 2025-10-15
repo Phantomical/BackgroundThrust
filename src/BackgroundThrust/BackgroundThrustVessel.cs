@@ -103,8 +103,14 @@ public class BackgroundThrustVessel : VesselModule
 
         if (throttle > 0.0)
             enabled = true;
+
+        var prev = TargetHeading;
+
         heading.Vessel = Vessel;
         TargetHeading = heading;
+
+        if (!ReferenceEquals(prev, heading))
+            Config.onHeadingChanged.Fire(new(this, prev, heading));
     }
     #endregion
 
@@ -136,9 +142,10 @@ public class BackgroundThrustVessel : VesselModule
         if (lastUpdateTime == 0.0)
             return;
 
-        TargetHeading ??= GetFixedHeading();
+        if (TargetHeading is null)
+            SetTargetHeading(GetFixedHeading());
 
-        if (TargetHeading.GetTargetHeading(now) is not Vector3d target)
+        if (TargetHeading?.GetTargetHeading(now) is not Vector3d target)
         {
             PackedCutThrottle();
             ScreenMessages.PostScreenMessage("Maneuver Complete. Cutting thrust.");
@@ -210,18 +217,10 @@ public class BackgroundThrustVessel : VesselModule
         if (vessel.loaded)
             return;
 
-        if (Throttle == 0.0)
+        if (!Config.VesselInfoProvider.AllowBackground || TargetHeading is null)
         {
-            // There is no point in running fixed updates if the throttle is 0
-            // so we disable outselves here.
-            enabled = false;
-            return;
-        }
-
-        if (!Config.VesselInfoProvider.AllowBackground || Throttle == 0.0 || TargetHeading is null)
-        {
-            // There's no point running fixed updates if thrust is 0, so we
-            // disable ourselves here.
+            // If we aren't set up to run any updates then we disable ourselves
+            // to avoid extra overhead.
             enabled = false;
             return;
         }
@@ -251,7 +250,7 @@ public class BackgroundThrustVessel : VesselModule
 
         if (TargetHeading.GetTargetHeading(UT) is null)
         {
-            TargetHeading = null;
+            SetTargetHeading(null);
             SetThrottle(0.0, UT);
             return;
         }
@@ -352,7 +351,7 @@ public class BackgroundThrustVessel : VesselModule
         if (from == to)
             return;
 
-        TargetHeading = GetNewHeadingProvider();
+        SetTargetHeading(GetNewHeadingProvider());
     }
 
     public override void OnLoadVessel()
