@@ -73,13 +73,13 @@ public class BackgroundEngine : PartModule
         ClearBuffers();
     }
 
-    void OnTimeWarpRateChanged()
+    protected virtual void OnTimeWarpRateChanged()
     {
         if (vessel.packed)
             UpdateBuffers();
     }
 
-    void OnVesselGoOffRails(Vessel vessel)
+    protected virtual void OnVesselGoOffRails(Vessel vessel)
     {
         if (vessel != this.vessel)
             return;
@@ -89,7 +89,7 @@ public class BackgroundEngine : PartModule
     #endregion
 
     #region Packed Update
-    internal void PackedEngineUpdate()
+    public virtual void PackedEngineUpdate()
     {
         if (Engine is null)
         {

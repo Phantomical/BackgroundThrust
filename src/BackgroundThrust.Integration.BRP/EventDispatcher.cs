@@ -1,17 +1,70 @@
 using System;
+using System.Collections.Generic;
 using BackgroundResourceProcessing;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace BackgroundThrust.Integration.BRP;
 
 [KSPAddon(KSPAddon.Startup.AllGameScenes, once: false)]
 public class EventDispatcher : MonoBehaviour
 {
+    public struct VesselInfo
+    {
+        public double WetMass;
+        public double WetMassRate;
+        public double Thrust;
+        public double LastUpdateUT;
+    }
+
+    public static EventDispatcher Instance { get; private set; } = null;
+
     static bool InChangepointCallback = false;
 
+    #region Vessel Info
+    readonly Dictionary<Guid, VesselInfo> vesselInfo = [];
+
+    public VesselInfo GetVesselInfo(Vessel vessel)
+    {
+        if (vesselInfo.TryGetValue(vessel.id, out var info))
+            return info;
+
+        var processor = vessel.FindVesselModuleImplementing<BackgroundResourceProcessor>();
+        var mass = processor.GetWetMass();
+
+        double thrust = 0.0;
+        foreach (var converter in processor.Converters)
+        {
+            if (converter.Behaviour is not BackgroundEngineBehaviour engine)
+                continue;
+            thrust += engine.Thrust;
+        }
+
+        info = new()
+        {
+            Thrust = thrust,
+            WetMass = mass.amount,
+            WetMassRate = mass.rate,
+            LastUpdateUT = processor.LastChangepoint,
+        };
+
+        vesselInfo[vessel.id] = info;
+        return info;
+    }
+
+    #endregion
+
+    #region Event Handlers
     void Awake()
     {
         Config.BackgroundProcessing = true;
+
+        if (Instance is not null)
+            throw new InvalidOperationException(
+                "Cannot create multiple EventDispatcher instances at once"
+            );
+
+        Instance = this;
     }
 
     void Start()
@@ -28,30 +81,19 @@ public class EventDispatcher : MonoBehaviour
         BackgroundResourceProcessor.onVesselRecord.Remove(OnVesselRecord);
         Config.onUnloadedThrustStarted.Remove(OnThrustStarted);
         Config.onUnloadedThrustStopped.Remove(OnThrustStopped);
+
+        Instance = null;
     }
 
     void OnVesselChangepoint(BackgroundResourceProcessor processor, ChangepointEvent evt)
     {
         using var guard = new InChangepointCallbackGuard();
 
-        double thrust = 0.0;
-        foreach (var converter in processor.Converters)
-        {
-            if (converter.Behaviour is not BackgroundEngineBehaviour engine)
-                continue;
-
-            thrust += engine.Thrust * converter.Rate;
-        }
-
         var vessel = processor.Vessel;
         var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
-        var mass = processor.GetWetMass();
-        var dryMass = module.DryMass ?? vessel.totalMass;
 
         module.BackgroundFixedUpdate(evt.CurrentChangepoint);
-        module.LastUpdateMass = dryMass + mass.amount;
-        module.MassChangeRate = mass.rate;
-        module.SetThrust(thrust, evt.CurrentChangepoint);
+        vesselInfo.Remove(vessel.id);
     }
 
     void OnVesselRecord(BackgroundResourceProcessor processor)
@@ -122,6 +164,7 @@ public class EventDispatcher : MonoBehaviour
         if (dirty)
             processor.MarkDirty();
     }
+    #endregion
 
     readonly struct InChangepointCallbackGuard : IDisposable
     {

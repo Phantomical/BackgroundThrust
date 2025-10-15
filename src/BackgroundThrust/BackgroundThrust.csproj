@@ -28,6 +28,8 @@
         https://github.com/Phantomical/KSPPluginLoader/releases/latest/download/KSPPluginLoader.version</URL>
       <Download>https://github.com/Phantomical/KSPPluginLoader/releases/latest</Download>
     </KSPVersionFile>
+
+    <InternalsVisibleTo Include="BackgroundThrust.Integration.Kerbalism" />
   </ItemGroup>
 
   <!--

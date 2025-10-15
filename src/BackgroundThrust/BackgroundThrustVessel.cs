@@ -36,13 +36,6 @@ public class BackgroundThrustVessel : VesselModule
     public double Thrust => thrust;
 
     /// <summary>
-    /// The rate at which the vessel mass is changing. This is used by
-    /// background processing and needs to be set appropriately by
-    /// whichever implementation of background processing is available.
-    /// </summary>
-    public double? MassChangeRate;
-
-    /// <summary>
     /// The known dry mass of the vessel. This is only updated when the vessel
     /// is unloaded.
     /// </summary>
@@ -111,7 +104,6 @@ public class BackgroundThrustVessel : VesselModule
     {
         LastUpdateTime = Planetarium.GetUniversalTime();
         LastUpdateMass = vessel.totalMass;
-        MassChangeRate = null;
     }
     #endregion
 
@@ -124,8 +116,10 @@ public class BackgroundThrustVessel : VesselModule
         var now = Planetarium.GetUniversalTime();
         var lastUpdateTime = LastUpdateTime;
         var lastUpdateMass = LastUpdateMass;
+        var currentMass = Config.VesselInfoProvider.GetVesselMass(this, now);
+
         LastUpdateTime = now;
-        LastUpdateMass = vessel.totalMass;
+        LastUpdateMass = currentMass;
 
         if (lastUpdateTime == 0.0)
             return;
@@ -165,12 +159,10 @@ public class BackgroundThrustVessel : VesselModule
         );
         vessel.SetRotation(vessel.transform.rotation);
 
-        double thrust = 0.0;
         foreach (var engine in Engines)
-        {
             engine.PackedEngineUpdate();
-            thrust += engine.Thrust;
-        }
+
+        var thrust = Config.VesselInfoProvider.GetVesselThrust(this, now);
         SetThrust(thrust, now);
 
         var parameters = new ThrustParameters
@@ -202,7 +194,7 @@ public class BackgroundThrustVessel : VesselModule
         if (vessel.loaded)
             return;
 
-        if (!Config.BackgroundProcessing || Thrust == 0.0 || TargetHeading is null)
+        if (!Config.VesselInfoProvider.AllowBackground || Thrust == 0.0 || TargetHeading is null)
         {
             // There's no point running fixed updates if thrust is 0, so we
             // disable ourselves here.
@@ -215,17 +207,15 @@ public class BackgroundThrustVessel : VesselModule
 
         var lastUpdateTime = LastUpdateTime;
         var lastUpdateMass = LastUpdateMass;
+
         LastUpdateTime = UT;
 
         var deltaT = UT - lastUpdateTime;
         if (deltaT <= 0.0)
             return;
-        if (MassChangeRate is not double rate)
-            return;
 
-        var deltaM = rate * deltaT;
-        var currentMass = lastUpdateMass + deltaM;
-
+        var currentMass = Config.VesselInfoProvider.GetVesselMass(this, UT);
+        LastUpdateTime = UT;
         LastUpdateMass = currentMass;
 
         if (currentMass <= 0.0)
@@ -292,9 +282,6 @@ public class BackgroundThrustVessel : VesselModule
     #region Event Handlers
     protected override void OnStart()
     {
-        if (vessel.loaded)
-            MassChangeRate = null;
-
         if (LastUpdateTime == 0.0)
         {
             LastUpdateTime = Planetarium.GetUniversalTime();
@@ -345,9 +332,6 @@ public class BackgroundThrustVessel : VesselModule
 
     public override void OnLoadVessel()
     {
-        // This is only used for background processing and needs to be set
-        // by whatever system is doing background processing.
-        MassChangeRate = null;
         DryMass = null;
     }
 
@@ -368,10 +352,6 @@ public class BackgroundThrustVessel : VesselModule
         if (node.TryGetValue("throttle", ref throttle))
             vessel?.ctrlState?.mainThrottle = throttle;
 
-        double massChangeRate = 0.0;
-        if (node.TryGetValue(nameof(MassChangeRate), ref massChangeRate))
-            MassChangeRate = massChangeRate;
-
         double dryMass = 0.0;
         if (node.TryGetValue(nameof(DryMass), ref dryMass))
             DryMass = dryMass;
@@ -386,8 +366,6 @@ public class BackgroundThrustVessel : VesselModule
 
         if (vessel?.ctrlState?.mainThrottle is float throttle)
             node.AddValue("throttle", throttle);
-        if (MassChangeRate is double massChangeRate)
-            node.AddValue(nameof(MassChangeRate), massChangeRate);
 
         if (vessel.loaded)
             DryMass = ComputeDryMass();

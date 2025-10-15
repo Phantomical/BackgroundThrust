@@ -21,6 +21,8 @@ public static class Config
         "onUnloadedThrustStopped"
     );
 
+    public static VesselInfoProvider VesselInfoProvider = new StockVesselInfoProvider();
+
     /// <summary>
     /// If <c>true</c> then BackgroundThrust will not perform any resource
     /// updates during <c>FixedUpdate</c>. It will then be assumed that
