@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>BackgroundThrust BRP Integration</Description>
+
+        <GenerateKSPAssemblyAttribute>true</GenerateKSPAssemblyAttribute>
+        <GenerateKSPAssemblyDependencyAttributes>true</GenerateKSPAssemblyDependencyAttributes>
+
+        <KSPBinaryType>binary</KSPBinaryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference
+            Include="$(ProjectDir)/../BackgroundThrust/BackgroundThrust.csproj">
+            <KSPAssemblyName>BackgroundThrust</KSPAssemblyName>
+            <KSPAssemblyVersion>$(Version)</KSPAssemblyVersion>
+            <Private>false</Private>
+        </ProjectReference>
+
+        <Reference Include="0Harmony.dll">
+            <HintPath>$(DepSet1)\000_Harmony\0Harmony.dll</HintPath>
+            <Private>false</Private>
+            <CKANIdentifier>Harmony2</CKANIdentifier>
+            <KSPAssemblyName>HarmonyKSP</KSPAssemblyName>
+            <KSPAssemblyVersion>1.0.0</KSPAssemblyVersion>
+        </Reference>
+
+        <Reference Include="Kerbalism.dll">
+            <HintPath>$(DepSet2)\Kerbalism\Kerbalism112.kbin</HintPath>
+            <Private>false</Private>
+            <CKANIdentifier>BackgroundResourceProcessing</CKANIdentifier>
+            <KSPAssemblyName>BackgroundResourceProcessing</KSPAssemblyName>
+            <KSPAssemblyVersion>0.2.0</KSPAssemblyVersion>
+        </Reference>
+
+        <InternalsVisibleTo Include="BackgroundResourceProcessing.Test" />
+    </ItemGroup>
+</Project>

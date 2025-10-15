@@ -1,0 +1,19 @@
+{
+    "spec_version": "v1.6",
+    "identifier": "BackgroundThrust-Dependencies-2",
+    "name": "BackgroundThrust Dependency Set 2",
+    "abstract": "Dependencies required to do development for BackgroundThrust",
+    "author": "steamroller",
+    "version": "1",
+    "ksp_version_min": "1.8",
+    "ksp_version_max": "1.12",
+    "license": "MIT",
+    "kind": "metapackage",
+    "depends": [
+        { "name": "Kerbalism", "suppress_recommendations": true }
+    ],
+    "recommends": [
+        { "name": "KSPCommunityFixes" },
+        { "name": "QuickStart" }
+    ]
+}
