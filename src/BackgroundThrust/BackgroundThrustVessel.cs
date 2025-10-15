@@ -22,18 +22,19 @@ public class BackgroundThrustVessel : VesselModule
     public double LastUpdateMass = 0.0;
 
     [KSPField(isPersistant = true)]
-    private double thrust = 0.0;
+    private double throttle = 0.0;
 
     /// <summary>
-    /// The current thrust being produced by this vessel.
+    /// The current throttle for this vessel.
     /// </summary>
     ///
     /// <remarks>
-    /// It will automatically be updated while the ship is loaded, if you are
-    /// implementing background processing then use <see cref="SetThrust(double)"/> to
-    /// set this while the ship is unloaded.
+    /// While the vessel is loaded this will mirror the current value of
+    /// <c>vessel.ctrlState.mainThrottle</c>. If you are implementing background
+    /// processing then you can use <see cref="SetThrottle(double)"/> in order to
+    /// change the throttle up or down.
     /// </remarks>
-    public double Thrust => thrust;
+    public double Throttle => throttle;
 
     /// <summary>
     /// The known dry mass of the vessel. This is only updated when the vessel
@@ -61,27 +62,34 @@ public class BackgroundThrustVessel : VesselModule
     }
 
     #region Getters and Setters
-    public void SetThrust(double thrust) => SetThrust(thrust, Planetarium.GetUniversalTime());
+    public void SetThrottle(double throttle) =>
+        SetThrottle(throttle, Planetarium.GetUniversalTime());
 
-    public void SetThrust(double thrust, double UT)
+    public void SetThrottle(double throttle, double UT)
     {
-        var wasZero = this.thrust == 0.0;
-        var nowZero = thrust == 0.0;
+        throttle = UtilMath.Clamp01(throttle);
 
-        if (wasZero)
-            LastUpdateTime = Math.Max(LastUpdateTime, UT);
-
-        if (!nowZero && TargetHeading is not null)
-            enabled = true;
-
-        this.thrust = thrust;
-
-        if (!vessel.loaded)
+        if (vessel.loaded)
         {
-            if (wasZero && !nowZero)
-                Config.onUnloadedThrustStarted.Fire(this);
-            else if (!wasZero && nowZero)
-                Config.onUnloadedThrustStopped.Fire(this);
+            vessel.ctrlState.mainThrottle = (float)throttle;
+            this.throttle = throttle;
+        }
+        else
+        {
+            var wasZero = this.throttle == 0.0;
+            var nowZero = throttle == 0.0;
+
+            if (wasZero)
+                LastUpdateTime = Math.Max(LastUpdateTime, UT);
+
+            if (!nowZero && TargetHeading is not null)
+                enabled = true;
+
+            var prev = this.throttle;
+            this.throttle = throttle;
+
+            if (!vessel.loaded && prev != throttle)
+                Config.onBackgroundThrottleChanged.Fire(new(this, prev, throttle));
         }
     }
 
@@ -93,7 +101,8 @@ public class BackgroundThrustVessel : VesselModule
         if (TargetHeading is null)
             LastUpdateTime = Math.Max(LastUpdateTime, UT);
 
-        enabled = true;
+        if (throttle > 0.0)
+            enabled = true;
         heading.Vessel = Vessel;
         TargetHeading = heading;
     }
@@ -104,19 +113,22 @@ public class BackgroundThrustVessel : VesselModule
     {
         LastUpdateTime = Planetarium.GetUniversalTime();
         LastUpdateMass = vessel.totalMass;
+        throttle = vessel.ctrlState.mainThrottle;
     }
     #endregion
 
     #region Packed Vessel Handling
     void PackedFixedUpdate()
     {
-        if (vessel.ctrlState.mainThrottle == 0f)
+        throttle = vessel.ctrlState.mainThrottle;
+        if (throttle == 0.0)
             return;
 
+        var provider = Config.VesselInfoProvider;
         var now = Planetarium.GetUniversalTime();
         var lastUpdateTime = LastUpdateTime;
         var lastUpdateMass = LastUpdateMass;
-        var currentMass = Config.VesselInfoProvider.GetVesselMass(this, now);
+        var currentMass = provider.GetVesselMass(this, now);
 
         LastUpdateTime = now;
         LastUpdateMass = currentMass;
@@ -163,7 +175,11 @@ public class BackgroundThrustVessel : VesselModule
             engine.PackedEngineUpdate();
 
         var thrust = Config.VesselInfoProvider.GetVesselThrust(this, now);
-        SetThrust(thrust, now);
+        if (thrust == 0.0 && provider.DisableOnZeroThrustInBackground)
+        {
+            enabled = false;
+            return;
+        }
 
         var parameters = new ThrustParameters
         {
@@ -171,16 +187,16 @@ public class BackgroundThrustVessel : VesselModule
             StopUT = now,
             StartMass = lastUpdateMass,
             StopMass = vessel.totalMass,
-            Thrust = Thrust,
+            Thrust = thrust,
         };
 
         TargetHeading.IntegrateThrust(this, parameters);
-        LastUpdateTime = now;
     }
 
     private void PackedCutThrottle()
     {
         vessel.ctrlState.mainThrottle = 0f;
+        throttle = 0.0;
         TargetHeading = null;
         TimeWarp.SetRate(0, instant: true);
     }
@@ -194,7 +210,15 @@ public class BackgroundThrustVessel : VesselModule
         if (vessel.loaded)
             return;
 
-        if (!Config.VesselInfoProvider.AllowBackground || Thrust == 0.0 || TargetHeading is null)
+        if (Throttle == 0.0)
+        {
+            // There is no point in running fixed updates if the throttle is 0
+            // so we disable outselves here.
+            enabled = false;
+            return;
+        }
+
+        if (!Config.VesselInfoProvider.AllowBackground || Throttle == 0.0 || TargetHeading is null)
         {
             // There's no point running fixed updates if thrust is 0, so we
             // disable ourselves here.
@@ -221,24 +245,25 @@ public class BackgroundThrustVessel : VesselModule
         if (currentMass <= 0.0)
         {
             LastUpdateMass = lastUpdateMass;
-            SetThrust(0.0, UT);
+            SetThrottle(0.0, UT);
             return;
         }
 
         if (TargetHeading.GetTargetHeading(UT) is null)
         {
             TargetHeading = null;
-            SetThrust(0.0, UT);
+            SetThrottle(0.0, UT);
             return;
         }
 
+        var thrust = Config.VesselInfoProvider.GetVesselThrust(this, UT);
         var parameters = new ThrustParameters
         {
             StartUT = lastUpdateTime,
             StopUT = UT,
             StartMass = LastUpdateMass,
             StopMass = currentMass,
-            Thrust = Thrust,
+            Thrust = thrust,
         };
 
         TargetHeading.IntegrateThrust(this, parameters);
@@ -288,7 +313,7 @@ public class BackgroundThrustVessel : VesselModule
             LastUpdateMass = vessel.totalMass;
         }
 
-        if (Thrust == 0.0)
+        if (Throttle == 0.0)
             return;
 
         // If we are actively thrusting towards a heading then rotate the vessel

@@ -1,10 +1,13 @@
 using System;
+using BackgroundResourceProcessing;
 
 namespace BackgroundThrust.Integration.BRP;
 
 public class BRPVesselInfoProvider : StockVesselInfoProvider
 {
     public override bool AllowBackground => true;
+
+    public override bool DisableOnZeroThrustInBackground => true;
 
     public override double GetVesselMass(BackgroundThrustVessel module, double UT)
     {
@@ -24,8 +27,7 @@ public class BRPVesselInfoProvider : StockVesselInfoProvider
         if (vessel.loaded)
             return base.GetVesselThrust(module, UT);
 
-        // We already set the thrust field on changepoints, so no need to do
-        // anything extra here.
-        return module.Thrust;
+        var info = EventDispatcher.Instance.GetVesselInfo(vessel);
+        return info.Thrust;
     }
 }

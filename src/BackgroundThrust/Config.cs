@@ -8,18 +8,12 @@ public static class Config
     >> onAutopilotModeChange = new("onAutopilotModeChange");
 
     /// <summary>
-    /// This event is fired when thrust changes from 0 to non-zero on an unloaded vessel.
+    /// This event is emitted when the throttle is changed on the vessel.
     /// </summary>
-    public static readonly EventData<BackgroundThrustVessel> onUnloadedThrustStarted = new(
-        "onUnloadedThrustStarted"
-    );
-
-    /// <summary>
-    /// This event is fired when the thrust goes to 0 on an unloaded vessel.
-    /// </summary>
-    public static readonly EventData<BackgroundThrustVessel> onUnloadedThrustStopped = new(
-        "onUnloadedThrustStopped"
-    );
+    public static readonly EventData<GameEvents.HostedFromToAction<
+        BackgroundThrustVessel,
+        double
+    >> onBackgroundThrottleChanged = new("onBackgroundThrottleChanged");
 
     public static VesselInfoProvider VesselInfoProvider = new StockVesselInfoProvider();
 

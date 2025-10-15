@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BackgroundResourceProcessing;
 using UnityEngine;
 using UnityEngine.Rendering;
+using VehiclePhysics;
 
 namespace BackgroundThrust.Integration.BRP;
 
@@ -19,8 +20,6 @@ public class EventDispatcher : MonoBehaviour
 
     public static EventDispatcher Instance { get; private set; } = null;
 
-    static bool InChangepointCallback = false;
-
     #region Vessel Info
     readonly Dictionary<Guid, VesselInfo> vesselInfo = [];
 
@@ -31,13 +30,15 @@ public class EventDispatcher : MonoBehaviour
 
         var processor = vessel.FindVesselModuleImplementing<BackgroundResourceProcessor>();
         var mass = processor.GetWetMass();
+        var module = GetVesselModule(vessel);
+        var throttle = module.Throttle;
 
         double thrust = 0.0;
         foreach (var converter in processor.Converters)
         {
             if (converter.Behaviour is not BackgroundEngineBehaviour engine)
                 continue;
-            thrust += engine.Thrust;
+            thrust += engine.MaxThrust * (engine.Throttle ?? throttle) * converter.Rate;
         }
 
         info = new()
@@ -52,6 +53,20 @@ public class EventDispatcher : MonoBehaviour
         return info;
     }
 
+    #endregion
+
+    #region Vessel Module Cache
+    readonly Dictionary<Guid, BackgroundThrustVessel> vesselModules = [];
+
+    public BackgroundThrustVessel GetVesselModule(Vessel v)
+    {
+        if (vesselModules.TryGetValue(v.id, out var module))
+            return module;
+
+        module = v.FindVesselModuleImplementing<BackgroundThrustVessel>();
+        vesselModules[v.id] = module;
+        return module;
+    }
     #endregion
 
     #region Event Handlers
@@ -70,25 +85,21 @@ public class EventDispatcher : MonoBehaviour
     void Start()
     {
         BackgroundResourceProcessor.onVesselChangepoint.Add(OnVesselChangepoint);
-        BackgroundResourceProcessor.onVesselRecord.Add(OnVesselRecord);
-        Config.onUnloadedThrustStarted.Add(OnThrustStarted);
-        Config.onUnloadedThrustStopped.Add(OnThrustStopped);
+        Config.onBackgroundThrottleChanged.Add(OnBackgroundThrottleChanged);
+        GameEvents.onVesselDestroy.Add(OnVesselDestroy);
     }
 
     void OnDestroy()
     {
         BackgroundResourceProcessor.onVesselChangepoint.Remove(OnVesselChangepoint);
-        BackgroundResourceProcessor.onVesselRecord.Remove(OnVesselRecord);
-        Config.onUnloadedThrustStarted.Remove(OnThrustStarted);
-        Config.onUnloadedThrustStopped.Remove(OnThrustStopped);
+        Config.onBackgroundThrottleChanged.Add(OnBackgroundThrottleChanged);
+        GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
 
         Instance = null;
     }
 
     void OnVesselChangepoint(BackgroundResourceProcessor processor, ChangepointEvent evt)
     {
-        using var guard = new InChangepointCallbackGuard();
-
         var vessel = processor.Vessel;
         var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
 
@@ -96,80 +107,31 @@ public class EventDispatcher : MonoBehaviour
         vesselInfo.Remove(vessel.id);
     }
 
-    void OnVesselRecord(BackgroundResourceProcessor processor)
+    void OnBackgroundThrottleChanged(
+        GameEvents.HostedFromToAction<BackgroundThrustVessel, double> evt
+    )
     {
-        var vessel = processor.Vessel;
-        var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
-
-        if (module.TargetHeading is not null)
-            return;
-
-        foreach (var converter in processor.Converters)
-        {
-            if (converter.Behaviour is not BackgroundEngineBehaviour engine)
-                continue;
-
-            engine.Enabled = false;
-        }
-    }
-
-    void OnThrustStarted(BackgroundThrustVessel module)
-    {
-        if (InChangepointCallback)
-            return;
-
-        var vessel = module.Vessel;
+        var vessel = evt.host.Vessel;
         var processor = vessel.FindVesselModuleImplementing<BackgroundResourceProcessor>();
-        bool dirty = false;
+        var dirty = false;
 
         foreach (var converter in processor.Converters)
         {
-            if (converter.Behaviour is not BackgroundEngineBehaviour engine)
+            if (converter.Behaviour is not BackgroundEngineBehaviour)
                 continue;
 
-            if (!engine.Enabled)
-            {
-                dirty = true;
-                converter.NextChangepoint = Planetarium.GetUniversalTime();
-            }
-            engine.Enabled = true;
+            converter.NextChangepoint = Planetarium.GetUniversalTime();
+            dirty = true;
         }
 
         if (dirty)
             processor.MarkDirty();
     }
 
-    void OnThrustStopped(BackgroundThrustVessel module)
+    void OnVesselDestroy(Vessel vessel)
     {
-        if (InChangepointCallback)
-            return;
-
-        var vessel = module.Vessel;
-        var processor = vessel.FindVesselModuleImplementing<BackgroundResourceProcessor>();
-        bool dirty = false;
-
-        foreach (var converter in processor.Converters)
-        {
-            if (converter.Behaviour is not BackgroundEngineBehaviour engine)
-                continue;
-
-            if (engine.Enabled)
-            {
-                dirty = true;
-                converter.NextChangepoint = Planetarium.GetUniversalTime();
-            }
-            engine.Enabled = false;
-        }
-
-        if (dirty)
-            processor.MarkDirty();
+        vesselModules.Remove(vessel.id);
+        vesselInfo.Remove(vessel.id);
     }
     #endregion
-
-    readonly struct InChangepointCallbackGuard : IDisposable
-    {
-        public InChangepointCallbackGuard() => InChangepointCallback = true;
-
-        public void Dispose() => InChangepointCallback = false;
-    }
 }

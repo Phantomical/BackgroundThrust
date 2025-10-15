@@ -12,8 +12,6 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
         BindingFlags.Instance | BindingFlags.NonPublic
     );
 
-    static readonly List<ResourceConstraint> EmptyConstraints = [];
-
     public override ModuleBehaviour GetBehaviour(BackgroundEngine module)
     {
         if (!module.IsEnabled)
@@ -22,13 +20,10 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
             return null;
 
         var engine = module.Engine;
-        var throttle = (double)engine.currentThrottle;
-        if (throttle == 0.0 || !engine.EngineIgnited)
-            return null;
-
-        var thrust = engine.finalThrust;
-        if (thrust == 0.0)
-            return null;
+        double? throttle = null;
+        if (engine.independentThrottle)
+            throttle = engine.independentThrottlePercentage * 0.01;
+        var maxThrust = engine.maxThrust;
 
         var inputs = new List<ResourceRatio>(engine.propellants.Count);
         var outputs = new List<ResourceRatio>();
@@ -39,7 +34,7 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
                 new()
                 {
                     ResourceName = propellant.resourceDef.name,
-                    Ratio = engine.getFuelFlow(propellant, engine.requestedMassFlow),
+                    Ratio = engine.getMaxFuelFlow(propellant),
                     FlowMode = propellant.GetFlowMode(),
                     DumpExcess = false,
                 }
@@ -59,7 +54,7 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
                     new ResourceRatio
                     {
                         ResourceName = resource.name,
-                        Ratio = resource.rate * throttle,
+                        Ratio = resource.rate,
                         FlowMode = resource.flowMode,
                     }
                 );
@@ -71,7 +66,7 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
                     new ResourceRatio
                     {
                         ResourceName = resource.name,
-                        Ratio = resource.rate * throttle,
+                        Ratio = resource.rate,
                         FlowMode = resource.flowMode,
                         DumpExcess = true,
                     }
@@ -80,9 +75,10 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
         }
 
         return new(
-            new BackgroundEngineBehaviour(inputs, outputs, EmptyConstraints)
+            new BackgroundEngineBehaviour(inputs, outputs)
             {
-                Thrust = engine.resultingThrust,
+                MaxThrust = maxThrust,
+                Throttle = throttle,
             }
         );
     }

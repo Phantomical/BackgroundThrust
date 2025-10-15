@@ -9,6 +9,17 @@ public abstract class VesselInfoProvider
     public abstract bool AllowBackground { get; }
 
     /// <summary>
+    /// Whether the <see cref="BackgroundThrust"/> module should disable itself
+    /// if <see cref="GetVesselThrust"/> returns 0.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// This is generally more efficient but may not be compatible with all
+    /// background processing implementations.
+    /// </remarks>
+    public virtual bool DisableOnZeroThrustInBackground => true;
+
+    /// <summary>
     /// Get the current mass of the vessel.
     /// </summary>
     /// <param name="module"></param>
