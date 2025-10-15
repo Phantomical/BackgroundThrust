@@ -73,8 +73,6 @@ public class EventDispatcher : MonoBehaviour
     #region Event Handlers
     void Awake()
     {
-        Config.BackgroundProcessing = true;
-
         if (Instance is not null)
             throw new InvalidOperationException(
                 "Cannot create multiple EventDispatcher instances at once"

@@ -18,6 +18,8 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
             return null;
         if (module.Engine is null)
             return null;
+        if (Config.VesselInfoProvider is not BRPVesselInfoProvider)
+            return null;
 
         var engine = module.Engine;
         double? throttle = null;
