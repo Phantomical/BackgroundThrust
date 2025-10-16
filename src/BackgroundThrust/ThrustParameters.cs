@@ -62,9 +62,16 @@ public struct ThrustParameters
     /// <returns></returns>
     public readonly double GetUTAtDeltaV(double dv)
     {
-        var dm = DeltaM / DeltaT;
         var thrust = Thrust.magnitude;
-
-        return StartUT + StartMass / dm * (Math.Exp(dv * dm / thrust) - 1);
+        var deltaM = DeltaM;
+        if (Math.Abs(deltaM) < 1e-6)
+        {
+            return dv * StartMass / thrust;
+        }
+        else
+        {
+            var dm = DeltaM / DeltaT;
+            return StartUT + StartMass / dm * (Math.Exp(dv * dm / thrust) - 1);
+        }
     }
 }
