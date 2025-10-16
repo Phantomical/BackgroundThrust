@@ -171,6 +171,8 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
+        target = target.normalized;
+
         // Make sure that the vessel is pointing in the target direction.
         vessel.transform.Rotate(
             Quaternion.FromToRotation(vessel.transform.up, (Vector3)target).eulerAngles,

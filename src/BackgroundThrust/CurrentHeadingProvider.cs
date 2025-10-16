@@ -1,3 +1,4 @@
+using System;
 using BackgroundThrust.Heading;
 using static VesselAutopilot;
 using SpeedDisplayModes = FlightGlobals.SpeedDisplayModes;
@@ -20,50 +21,91 @@ public class DefaultHeadingProvider : ICurrentHeadingProvider
             return new FixedHeading(vessel.transform.up);
 
         var displayMode = FlightGlobals.speedDisplayMode;
+        return displayMode switch
+        {
+            SpeedDisplayModes.Orbit => GetProviderOrbit(module),
+            SpeedDisplayModes.Surface => GetProviderSurface(module),
+            SpeedDisplayModes.Target => GetProviderTarget(module),
+            _ => GetProviderCommon(module),
+        };
+    }
+
+    private TargetHeadingProvider GetProviderOrbit(BackgroundThrustVessel module)
+    {
+        var vessel = module.Vessel;
+        var autopilot = vessel.Autopilot;
+
+        return autopilot.Mode switch
+        {
+            AutopilotMode.Prograde => new OrbitPrograde(),
+            AutopilotMode.Retrograde => new OrbitRetrograde(),
+            AutopilotMode.Normal => new OrbitNormal(),
+            AutopilotMode.Antinormal => new OrbitAntiNormal(),
+            AutopilotMode.RadialIn => new OrbitRadialIn(),
+            AutopilotMode.RadialOut => new OrbitRadialOut(),
+            _ => GetProviderCommon(module),
+        };
+    }
+
+    private TargetHeadingProvider GetProviderSurface(BackgroundThrustVessel module)
+    {
+        var vessel = module.Vessel;
+        var autopilot = vessel.Autopilot;
+
+        return autopilot.Mode switch
+        {
+            AutopilotMode.Prograde => new SurfacePrograde(),
+            AutopilotMode.Retrograde => new SurfaceRetrograde(),
+            AutopilotMode.Normal => new SurfaceNormal(),
+            AutopilotMode.Antinormal => new SurfaceAntiNormal(),
+            AutopilotMode.RadialIn => new SurfaceRadialIn(),
+            AutopilotMode.RadialOut => new SurfaceRadialOut(),
+            _ => GetProviderCommon(module),
+        };
+    }
+
+    private TargetHeadingProvider GetProviderTarget(BackgroundThrustVessel module)
+    {
+        var vessel = module.Vessel;
+        var autopilot = vessel.Autopilot;
+
+        switch (autopilot.Mode)
+        {
+            case AutopilotMode.Prograde:
+                if (vessel.targetObject is not null)
+                    return new TargetPrograde(vessel.targetObject);
+                goto default;
+            case AutopilotMode.Retrograde:
+                if (vessel.targetObject is not null)
+                    return new TargetRetrograde(vessel.targetObject);
+                goto default;
+
+            default:
+                return GetProviderSurface(module);
+        }
+    }
+
+    private TargetHeadingProvider GetProviderCommon(BackgroundThrustVessel module)
+    {
+        var vessel = module.Vessel;
+        var autopilot = vessel.Autopilot;
 
         switch (autopilot.Mode)
         {
             case AutopilotMode.StabilityAssist:
-                return new FixedHeading(vessel.transform.up);
-
-            case AutopilotMode.Prograde:
-                if (displayMode == SpeedDisplayModes.Orbit)
-                    return new OrbitPrograde();
-                break;
-            case AutopilotMode.Retrograde:
-                if (displayMode == SpeedDisplayModes.Orbit)
-                    return new OrbitRetrograde();
-                break;
-            case AutopilotMode.Normal:
-                if (displayMode == SpeedDisplayModes.Orbit)
-                    return new OrbitNormal();
-                break;
-            case AutopilotMode.Antinormal:
-                if (displayMode == SpeedDisplayModes.Orbit)
-                    return new OrbitAntiNormal();
-                break;
-            case AutopilotMode.RadialIn:
-                if (displayMode == SpeedDisplayModes.Orbit)
-                    return new OrbitRadialIn();
-                break;
-            case AutopilotMode.RadialOut:
-                if (displayMode == SpeedDisplayModes.Orbit)
-                    return new OrbitRadialOut();
-                break;
+                goto default;
 
             case AutopilotMode.Target:
                 if (vessel.targetObject is not null)
                     return new Target(vessel.targetObject);
-                break;
+                goto default;
             case AutopilotMode.AntiTarget:
                 if (vessel.targetObject is not null)
-                    return new Target(vessel.targetObject);
-                break;
+                    return new AntiTarget(vessel.targetObject);
+                goto default;
 
             default:
-                break;
+                return new FixedHeading(vessel.transform.up);
         }
-
-        return new FixedHeading(vessel.transform.up);
     }
 }
