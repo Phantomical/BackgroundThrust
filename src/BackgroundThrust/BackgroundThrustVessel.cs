@@ -347,7 +347,7 @@ public class BackgroundThrustVessel : VesselModule
 
     public override void OnGoOnRails()
     {
-        TargetHeading = GetNewHeadingProvider();
+        TargetHeading ??= GetNewHeadingProvider();
         StartCoroutine(DelayPreserveThrottle(vessel.ctrlState.mainThrottle));
     }
 

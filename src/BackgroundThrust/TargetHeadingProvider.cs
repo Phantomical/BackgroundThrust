@@ -1,6 +1,5 @@
-using System.Collections.Generic;
-using System.Linq;
 using BackgroundThrust.Utils;
+using static BackgroundThrust.Utils.MathUtil;
 
 namespace BackgroundThrust;
 
@@ -74,7 +73,6 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
     /// </remarks>
     public virtual void IntegrateThrust(BackgroundThrustVessel module, ThrustParameters parameters)
     {
-        var vessel = module.Vessel;
         var heading = module.Heading;
 
         var deltaV = parameters.ComputeDeltaV();
@@ -88,7 +86,7 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
         if (mag2 == 0.0 || !IsFinite(mag2))
             return;
 
-        vessel.orbit.Perturb(deltaV * heading, parameters.StopUT);
+        Vessel.orbit.Perturb(deltaV * heading, parameters.StopUT);
     }
 
     public static TargetHeadingProvider Load(Vessel vessel, ConfigNode node) =>
@@ -96,6 +94,4 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
 
     internal static new void RegisterAll() =>
         DynamicallySerializable<TargetHeadingProvider>.RegisterAll();
-
-    private static bool IsFinite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
 }

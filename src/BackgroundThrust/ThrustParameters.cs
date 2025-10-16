@@ -52,4 +52,19 @@ public struct ThrustParameters
 
         return thrust / deltaM * Math.Log(StopMass / StartMass) * DeltaT;
     }
+
+    /// <summary>
+    /// Assuming that the thrust and mass consumption rate remains constant,
+    /// returns the UT at which <paramref name="dv"/> delta-v will have been
+    /// applied, with 0 at <see cref="StartUT"/>.
+    /// </summary>
+    /// <param name="dv"></param>
+    /// <returns></returns>
+    public readonly double GetUTAtDeltaV(double dv)
+    {
+        var dm = DeltaM / DeltaT;
+        var thrust = Thrust.magnitude;
+
+        return StartUT + StartMass / dm * (Math.Exp(dv * dm / thrust) - 1);
+    }
 }

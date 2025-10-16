@@ -33,7 +33,8 @@ public static class Config
     public static VesselInfoProvider VesselInfoProvider = new StockVesselInfoProvider();
 
     /// <summary>
-    /// 
+    /// This returns the current heading provider that
+    /// <see cref="BackgroundThrustVessel"/> will use when the ship goes on rails.
     /// </summary>
     public static ICurrentHeadingProvider HeadingProvider = new DefaultHeadingProvider();
 
@@ -41,5 +42,4 @@ public static class Config
     /// An extra multiplier on the buffer capacity for persistent engines.
     /// </summary>
     public static readonly double BufferCapacityMult = 2.0;
-
 }
