@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace BackgroundThrust.Integration.Kerbalism;
 
-public class BackgroundEngineKerbalism : BackgroundEngine
+internal class BackgroundEngineKerbalism
 {
     struct PropellantInfo()
     {
@@ -29,23 +29,22 @@ public class BackgroundEngineKerbalism : BackgroundEngine
         }
     }
 
-    public override void OnSave(ConfigNode node)
+    public static void OnSave(BackgroundEngine module, ConfigNode node)
     {
-        base.OnSave(node);
-
-        if (Engine is null)
+        var engine = module.Engine;
+        if (engine is null)
             return;
 
-        if (Engine.independentThrottle)
-            node.AddValue("Throttle", Engine.independentThrottlePercentage * 0.01);
-        node.AddValue("Thrust", Engine.maxThrust);
+        if (module.Engine.independentThrottle)
+            node.AddValue("Throttle", engine.independentThrottlePercentage * 0.01);
+        node.AddValue("Thrust", engine.maxThrust);
 
-        foreach (var propellant in Engine.propellants)
+        foreach (var propellant in engine.propellants)
         {
             var info = new PropellantInfo()
             {
                 ResourceName = propellant.resourceDef.name,
-                Rate = Engine.getMaxFuelFlow(propellant),
+                Rate = engine.getMaxFuelFlow(propellant),
             };
 
             info.Save(node.AddNode("PROPELLANT"));
@@ -78,11 +77,12 @@ public class BackgroundEngineKerbalism : BackgroundEngine
         double elapsed_s
     )
     {
+        if (Config.VesselInfoProvider is not KerbalismVesselInfoProvider)
+            return KerbalismToolTipName;
+
         var module = v.FindVesselModuleImplementing<BackgroundThrustVessel>();
         var node = module_snapshot.moduleValues;
 
-        if (Config.VesselInfoProvider is not KerbalismVesselInfoProvider)
-            return KerbalismToolTipName;
         if (module.TargetHeading is null)
             return KerbalismToolTipName;
 

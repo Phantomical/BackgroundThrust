@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using BackgroundThrust.Patches;
 using UnityEngine;
@@ -349,4 +350,39 @@ public class BackgroundEngine : PartModule
             Engine = part.FindModuleImplementing<ModuleEngines>();
         }
     }
+
+    #region Kerbalism Shims
+    // The actual code to implement this is in a different assembly. However,
+    // we provide it here so that it can be harmony patched.
+    //
+    // This avoids needing to create a new module type for compatibility with
+    // Kerbalism, which would cause issues when adding/removing kerbalism from
+    // an install.
+
+    /// <summary>
+    /// We're always going to call you for resource handling.  You tell us what to produce or consume.  Here's how it'll look when your vessel is NOT loaded
+    /// </summary>
+    /// <param name="v">the vessel (unloaded)</param>
+    /// <param name="part_snapshot">proto part snapshot (contains all non-persistant KSPFields)</param>
+    /// <param name="module_snapshot">proto part module snapshot (contains all non-persistant KSPFields)</param>
+    /// <param name="proto_part_module">proto part module snapshot (contains all non-persistant KSPFields)</param>
+    /// <param name="proto_part">proto part snapshot (contains all non-persistant KSPFields)</param>
+    /// <param name="availableResources">key-value pair containing all available resources and their currently available amount on the vessel. if the resource is not in there, it's not available</param>
+    /// <param name="resourceChangeRequest">key-value pair that contains the resource names and the units per second that you want to produce/consume (produce: positive, consume: negative)</param>
+    /// <param name="elapsed_s">how much time elapsed since the last time. note this can be very long, minutes and hours depending on warp speed</param>
+    /// <returns>the title to be displayed in the resource tooltip</returns>
+    public static string BackgroundUpdate(
+        Vessel v,
+        ProtoPartSnapshot part_snapshot,
+        ProtoPartModuleSnapshot module_snapshot,
+        PartModule proto_part_module,
+        Part proto_part,
+        Dictionary<string, double> availableResources,
+        List<KeyValuePair<string, double>> resourceChangeRequest,
+        double elapsed_s
+    )
+    {
+        return "bt-engine";
+    }
+    #endregion
 }
