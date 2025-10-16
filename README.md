@@ -10,16 +10,24 @@ certain dependencies are available, completely in the background.
 * Automatic management of resource buffers so that your ion engines keep working
   at high warp factors.
 
-Beyond that, BackgroundThrust was designed to allow you to swap out the target
-control loop so that you can hook a custom autopilot module in to do whatever
-types of maneuvers you want to.
-
 ## Dependencies
-#### Required Dependencies
-- [ModuleManager](https://github.com/sarbian/ModuleManager)
-- [HarmonyKSP](https://github.com/KSPModdingLibs/HarmonyKSP)
+BackgroundThrust requires these mods to work. They are not included in the
+download and must be installed separately.
+* [ModuleManager](https://github.com/sarbian/ModuleManager)
+* [HarmonyKSP](https://github.com/KSPModdingLibs/HarmonyKSP)
 
-#### Optional Dependencies:
-In order to allow thrust to happen in the background you will need to also add
-one of the following mods:
+In order for background processing to work you must install one of these mods:
 * [BackgroundResourceProcessing](https://forum.kerbalspaceprogram.com/topic/228375-1125-background-resource-processing)
+* [Kerbalism](https://forum.kerbalspaceprogram.com/topic/190382-15-110-kerbalism-311/)
+
+## Install
+[GitHub][releases] | [Spacedock] | CKAN
+
+[releases]: https://github.com/Phantomical/BackgroundResourceProcessing/releases/latest
+[Spacedock]: https://spacedock.info/mod/3934/Background%20Thrust
+
+Downlaod the mod zip from one of the links above and drag the `GameData` folder
+into your KSP installation directory.
+
+## License
+Background Thrust is available under the MIT license.
