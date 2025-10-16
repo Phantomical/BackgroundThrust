@@ -22,23 +22,23 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: BackgroundResourceProcessing
-          path: BackgroundResourceProcessing
+          name: BackgroundThrust
+          path: BackgroundThrust
       - uses: actions/download-artifact@v4
         with:
-          name: BackgroundResourceProcessing.version
+          name: BackgroundThrust.version
       - run: tree
 
       - name: Create Zip
         run: |
-          cd BackgroundResourceProcessing
-          zip -r9 ../BackgroundResourceProcessing.zip *
+          cd BackgroundThrust
+          zip -r9 ../BackgroundThrust.zip *
 
       - name: Upload Release Assets
         run: |
           gh release upload --clobber ${{ github.ref_name }}  \
-            BackgroundResourceProcessing.zip                  \
-            BackgroundResourceProcessing.version
+            BackgroundThrust.zip                  \
+            BackgroundThrust.version
 
 
   upload-spacedock:
@@ -49,8 +49,8 @@ jobs:
       - name: Download Release Asset
         run: |
           gh release download ${{ github.ref_name }}  \
-            --pattern BackgroundResourceProcessing.zip       \
-            --output BackgroundResourceProcessing.zip
+            --pattern BackgroundThrust.zip       \
+            --output BackgroundThrust.zip
 
       - name: Get Release Description
         run: |
@@ -71,5 +71,5 @@ jobs:
           # KSP1 gameid. Retrieve from https://spacedock.info/api/games
           game_id: '3102'
           mod_id: '3934'
-          zipball: BackgroundResourceProcessing.zip
+          zipball: BackgroundThrust.zip
           changelog: CHANGELOG.md
