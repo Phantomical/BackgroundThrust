@@ -46,17 +46,17 @@ jobs:
           shopt -s nullglob
           mkdir -p ${{ env.RELEASE_STAGING  }}   
           cp -r -v GameData README* LICENSE* CHANGELOG* ${{ env.RELEASE_STAGING }}
-          cp -r -v LICENSE* BackgroundResourceProcessing.ckan ${{ env.RELEASE_STAGING }}/GameData/BackgroundResourceProcessing
+          cp -r -v LICENSE* BackgroundThrust.ckan ${{ env.RELEASE_STAGING }}/GameData/BackgroundThrust
           cd ${{ env.RELEASE_STAGING }}
 
       - uses: actions/upload-artifact@v4
         with:
           path: ${{ env.RELEASE_STAGING }}
-          name: BackgroundResourceProcessing
+          name: BackgroundThrust
           if-no-files-found: error
           include-hidden-files: 'true'
 
       - uses: actions/upload-artifact@v4
         with:
-          path: GameData/BackgroundResourceProcessing/BackgroundResourceProcessing.version
-          name: BackgroundResourceProcessing.version
+          path: GameData/BackgroundThrust/BackgroundThrust.version
+          name: BackgroundThrust.version
