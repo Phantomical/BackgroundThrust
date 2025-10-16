@@ -31,7 +31,5 @@
             <KSPAssemblyName>Kerbalism</KSPAssemblyName>
             <KSPAssemblyVersion>0.0.0</KSPAssemblyVersion>
         </Reference>
-
-        <InternalsVisibleTo Include="BackgroundResourceProcessing.Test" />
     </ItemGroup>
 </Project>

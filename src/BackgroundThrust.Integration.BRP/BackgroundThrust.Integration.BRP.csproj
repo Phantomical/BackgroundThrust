@@ -31,7 +31,5 @@
             <KSPAssemblyName>BackgroundResourceProcessing</KSPAssemblyName>
             <KSPAssemblyVersion>0.2.0</KSPAssemblyVersion>
         </Reference>
-
-        <InternalsVisibleTo Include="BackgroundResourceProcessing.Test" />
     </ItemGroup>
 </Project>
