@@ -23,10 +23,10 @@
     </Reference>
 
     <KSPVersionFile Include=".">
-      <Destination>$(GameDataOutDir)/KSPPluginLoader.version</Destination>
+      <Destination>$(GameDataOutDir)/BackgroundThrust.version</Destination>
       <URL>
-        https://github.com/Phantomical/KSPPluginLoader/releases/latest/download/KSPPluginLoader.version</URL>
-      <Download>https://github.com/Phantomical/KSPPluginLoader/releases/latest</Download>
+        https://github.com/Phantomical/BackgroundThrust/releases/latest/download/BackgroundThrust.version</URL>
+      <Download>https://github.com/Phantomical/BackgroundThrust/releases/latest</Download>
     </KSPVersionFile>
 
     <InternalsVisibleTo Include="BackgroundThrust.Integration.Kerbalism" />
