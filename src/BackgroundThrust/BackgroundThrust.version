@@ -1,10 +1,10 @@
 {
-    "NAME": "KSPPluginLoader",
-    "URL": "https://github.com/Phantomical/KSPPluginLoader/releases/latest/download/KSPPluginLoader.version",
-    "DOWNLOAD": "https://github.com/Phantomical/KSPPluginLoader/releases",
+    "NAME": "BackgroundThrust",
+    "URL": "https://github.com/Phantomical/BackgroundThrust/releases/latest/download/BackgroundThrust.version",
+    "DOWNLOAD": "https://github.com/Phantomical/BackgroundThrust/releases",
     "GITHUB": {
         "USERNAME": "Phantomical",
-        "REPOSITORY": "KSPPluginLoader"
+        "REPOSITORY": "BackgroundThrust"
     },
     "VERSION": {},
     "KSP_VERSION": {
