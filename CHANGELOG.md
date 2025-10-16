@@ -11,6 +11,9 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+### Added
+* Allow entering time warp while the vessel is under thrust.
+* Accurately update the G-force meter while in time warp.
 
 ## 0.1.0
 This is the initial release of Background Thrust.
