@@ -24,9 +24,9 @@ In order for background processing to work you must install one of these mods:
 [GitHub][releases] | [Spacedock] | CKAN
 
 [releases]: https://github.com/Phantomical/BackgroundResourceProcessing/releases/latest
-[Spacedock]: https://spacedock.info/mod/3934/Background%20Thrust
+[Spacedock]: https://spacedock.info/mod/4009/Background%20Thrust
 
-Downlaod the mod zip from one of the links above and drag the `GameData` folder
+Download the mod zip from one of the links above and drag the `GameData` folder
 into your KSP installation directory.
 
 ## License
