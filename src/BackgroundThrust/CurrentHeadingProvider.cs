@@ -104,6 +104,11 @@ public class DefaultHeadingProvider : ICurrentHeadingProvider
                     return new AntiTarget(vessel.targetObject);
                 goto default;
 
+            case AutopilotMode.Maneuver:
+                if (vessel.patchedConicSolver.maneuverNodes.Count > 0)
+                    return new Maneuver();
+                goto default;
+
             default:
                 return new FixedHeading(vessel.transform.up);
         }

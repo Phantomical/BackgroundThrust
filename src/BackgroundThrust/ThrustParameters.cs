@@ -38,17 +38,18 @@ public struct ThrustParameters
     /// The thrust emitted by the vessel between <see cref="StartUT"/>
     /// and <see cref="StopUT"/>.
     /// </summary>
-    public double Thrust;
+    public Vector3d Thrust;
 
     public readonly double DeltaT => StopUT - StartUT;
     public readonly double DeltaM => StopMass - StartMass;
 
     public readonly double ComputeDeltaV()
     {
+        var thrust = Thrust.magnitude;
         var deltaM = DeltaM;
         if (Math.Abs(deltaM) < 1e-6)
-            return Thrust / StopMass * DeltaT;
+            return thrust / StopMass * DeltaT;
 
-        return Thrust / deltaM * Math.Log(StopMass / StartMass) * DeltaT;
+        return thrust / deltaM * Math.Log(StopMass / StartMass) * DeltaT;
     }
 }

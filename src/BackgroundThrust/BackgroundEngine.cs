@@ -16,11 +16,12 @@ public class BackgroundEngine : PartModule
         Instance
     );
 
+    public BackgroundThrustVessel VesselModule { get; private set; }
     public MultiModeEngine MultiModeEngine { get; private set; }
     public ModuleEngines Engine { get; private set; }
 
     [KSPField(isPersistant = true)]
-    public double Thrust;
+    public Vector3d Thrust;
 
     [KSPField(
         isPersistant = true,
@@ -52,12 +53,14 @@ public class BackgroundEngine : PartModule
 
         GameEvents.onTimeWarpRateChanged.Add(OnTimeWarpRateChanged);
         GameEvents.onVesselGoOffRails.Add(OnVesselGoOffRails);
+        GameEvents.onVesselPartCountChanged.Add(OnVesselPartCountChanged);
     }
 
     void OnDestroy()
     {
         GameEvents.onTimeWarpRateChanged.Remove(OnTimeWarpRateChanged);
         GameEvents.onVesselGoOffRails.Remove(OnVesselGoOffRails);
+        GameEvents.onVesselPartCountChanged.Remove(OnVesselPartCountChanged);
     }
 
     internal void OnMultiModeEngineSwitchActive()
@@ -86,6 +89,14 @@ public class BackgroundEngine : PartModule
 
         ClearBuffers();
     }
+
+    internal void OnVesselPartCountChanged(Vessel vessel)
+    {
+        if (vessel != this.vessel)
+            return;
+
+        VesselModule = null;
+    }
     #endregion
 
     #region Packed Update
@@ -93,13 +104,13 @@ public class BackgroundEngine : PartModule
     {
         if (Engine is null)
         {
-            Thrust = 0.0;
+            Thrust = Vector3d.zero;
             return;
         }
 
         if (!IsEnabled)
         {
-            Thrust = 0.0;
+            Thrust = Vector3d.zero;
             Engine.DeactivateLoopingFX();
             ClearBuffers();
             return;
@@ -131,18 +142,14 @@ public class BackgroundEngine : PartModule
         {
             IsThrustingField.SetValue(engine, true);
 
-            double thrust = 0.0;
-            var up = vessel.transform.up;
-
+            var thrust = Vector3d.zero;
             int count = engine.thrustTransforms.Count;
             for (int i = 0; i < count; ++i)
             {
                 var transform = engine.thrustTransforms[i];
                 var mult = engine.thrustTransformMultipliers[i];
-
                 var force = -transform.forward * engine.finalThrust * mult;
-                // We only take into account thrust applied along the vessel direction
-                thrust += Vector3d.Dot(force, up);
+                thrust += force;
             }
 
             double kilowatts =
@@ -160,7 +167,7 @@ public class BackgroundEngine : PartModule
         else
         {
             IsThrustingField.SetValue(engine, false);
-            Thrust = 0.0;
+            Thrust = Vector3d.zero;
         }
     }
     #endregion

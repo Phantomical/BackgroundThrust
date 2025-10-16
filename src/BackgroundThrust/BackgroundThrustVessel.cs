@@ -37,6 +37,11 @@ public class BackgroundThrustVessel : VesselModule
     public double Throttle => throttle;
 
     /// <summary>
+    /// The current vessel heading for the purposes of applying thrust.
+    /// </summary>
+    public Vector3d Heading => vessel?.ReferenceTransform?.up ?? vessel.transform.up;
+
+    /// <summary>
     /// The known dry mass of the vessel. This is only updated when the vessel
     /// is unloaded.
     /// </summary>
@@ -127,8 +132,6 @@ public class BackgroundThrustVessel : VesselModule
     void PackedFixedUpdate()
     {
         throttle = vessel.ctrlState.mainThrottle;
-        if (throttle == 0.0)
-            return;
 
         var provider = Config.VesselInfoProvider;
         var now = Planetarium.GetUniversalTime();
@@ -147,7 +150,9 @@ public class BackgroundThrustVessel : VesselModule
 
         if (TargetHeading?.GetTargetHeading(now) is not Vector3d target)
         {
-            PackedCutThrottle();
+            SetThrottle(0.0);
+            SetTargetHeading(null);
+            TimeWarp.SetRate(0, instant: true);
             ScreenMessages.PostScreenMessage("Maneuver Complete. Cutting thrust.");
             return;
         }
@@ -166,29 +171,29 @@ public class BackgroundThrustVessel : VesselModule
             else
                 LogUtil.Error($"{tname}.GetTargetHeading returned zero heading vector");
 
-            PackedCutThrottle();
+            SetThrottle(0.0);
+            SetTargetHeading(null);
+            TimeWarp.SetRate(0, instant: true);
             ScreenMessages.PostScreenMessage("Recieved invalid heading vector. Cutting thrust.");
             return;
         }
 
         target = target.normalized;
 
-        // Make sure that the vessel is pointing in the target direction.
-        vessel.transform.Rotate(
-            Quaternion.FromToRotation(vessel.transform.up, (Vector3)target).eulerAngles,
-            Space.World
-        );
-        vessel.SetRotation(vessel.transform.rotation);
-
         foreach (var engine in Engines)
             engine.PackedEngineUpdate();
 
-        var thrust = Config.VesselInfoProvider.GetVesselThrust(this, now);
-        if (thrust == 0.0 && provider.DisableOnZeroThrustInBackground)
-        {
-            enabled = false;
+        var thrust = provider.GetVesselThrust(this, now);
+        if (thrust == Vector3d.zero)
             return;
-        }
+
+        // Make sure that the vessel is pointing in the target direction.
+        var heading = Heading;
+        vessel.transform.Rotate(
+            Quaternion.FromToRotation(heading, (Vector3)target).eulerAngles,
+            Space.World
+        );
+        vessel.SetRotation(vessel.transform.rotation);
 
         var parameters = new ThrustParameters
         {
@@ -201,14 +206,6 @@ public class BackgroundThrustVessel : VesselModule
 
         TargetHeading.IntegrateThrust(this, parameters);
     }
-
-    private void PackedCutThrottle()
-    {
-        vessel.ctrlState.mainThrottle = 0f;
-        throttle = 0.0;
-        TargetHeading = null;
-        TimeWarp.SetRate(0, instant: true);
-    }
     #endregion
 
     #region Unloaded Vessel Handling
@@ -219,7 +216,8 @@ public class BackgroundThrustVessel : VesselModule
         if (vessel.loaded)
             return;
 
-        if (!Config.VesselInfoProvider.AllowBackground || TargetHeading is null)
+        var provider = Config.VesselInfoProvider;
+        if (!provider.AllowBackground || TargetHeading is null)
         {
             // If we aren't set up to run any updates then we disable ourselves
             // to avoid extra overhead.
@@ -239,7 +237,7 @@ public class BackgroundThrustVessel : VesselModule
         if (deltaT <= 0.0)
             return;
 
-        var currentMass = Config.VesselInfoProvider.GetVesselMass(this, UT);
+        var currentMass = provider.GetVesselMass(this, UT);
         LastUpdateTime = UT;
         LastUpdateMass = currentMass;
 
@@ -257,7 +255,7 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
-        var thrust = Config.VesselInfoProvider.GetVesselThrust(this, UT);
+        var thrust = provider.GetVesselThrust(this, UT);
         var parameters = new ThrustParameters
         {
             StartUT = lastUpdateTime,
@@ -266,6 +264,22 @@ public class BackgroundThrustVessel : VesselModule
             StopMass = currentMass,
             Thrust = thrust,
         };
+
+        if (thrust == Vector3d.zero)
+        {
+            if (throttle == 0.0)
+                // Zero thrust and zero throttle means we disable ourselves
+                // unconditionally.
+                //
+                // This may cause issues if there are resource-starved engines
+                // with an independent throttle but if we don't do this then
+                // we can potentially end up background vessels running extra
+                // FixedUpdates unecessarily.
+                enabled = false;
+            else if (provider.DisableOnZeroThrustInBackground)
+                enabled = false;
+            return;
+        }
 
         TargetHeading.IntegrateThrust(this, parameters);
     }
@@ -289,7 +303,7 @@ public class BackgroundThrustVessel : VesselModule
 
     public FixedHeading GetFixedHeading()
     {
-        return new(vessel.transform.up) { Vessel = vessel };
+        return new(Heading) { Vessel = vessel };
     }
 
     public double ComputeDryMass()
@@ -324,7 +338,7 @@ public class BackgroundThrustVessel : VesselModule
         {
             // Make sure that the vessel is pointing in the target direction.
             vessel.transform.Rotate(
-                Quaternion.FromToRotation(vessel.transform.up, (Vector3)target).eulerAngles,
+                Quaternion.FromToRotation(Heading, (Vector3)target).eulerAngles,
                 Space.World
             );
             vessel.SetRotation(vessel.transform.rotation);

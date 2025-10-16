@@ -17,19 +17,19 @@ internal class EventDispatcher : MonoBehaviour
 
     void Start()
     {
-        GameEvents.onVesselWasModified.Add(OnVesselWasModified);
+        GameEvents.onVesselPartCountChanged.Add(OnVesselPartCountChanged);
         GameEvents.onMultiModeEngineSwitchActive.Add(OnMultiModeEngineSwitchActive);
         Config.onAutopilotModeChange.Add(OnVesselAutopilotModeChanged);
     }
 
     void OnDestroy()
     {
-        GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+        GameEvents.onVesselWasModified.Remove(OnVesselPartCountChanged);
         GameEvents.onMultiModeEngineSwitchActive.Remove(OnMultiModeEngineSwitchActive);
         Config.onAutopilotModeChange.Remove(OnVesselAutopilotModeChanged);
     }
 
-    void OnVesselWasModified(Vessel vessel)
+    void OnVesselPartCountChanged(Vessel vessel)
     {
         var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
 

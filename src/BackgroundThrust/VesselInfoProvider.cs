@@ -54,7 +54,7 @@ public abstract class VesselInfoProvider
     /// but may vary somewhat when processing unloaded vessels.
     /// </para>
     /// </remarks>
-    public abstract double GetVesselThrust(BackgroundThrustVessel module, double UT);
+    public abstract Vector3d GetVesselThrust(BackgroundThrustVessel module, double UT);
 }
 
 public class StockVesselInfoProvider : VesselInfoProvider
@@ -64,9 +64,9 @@ public class StockVesselInfoProvider : VesselInfoProvider
     public override double GetVesselMass(BackgroundThrustVessel module, double UT) =>
         module.Vessel.totalMass;
 
-    public override double GetVesselThrust(BackgroundThrustVessel module, double UT)
+    public override Vector3d GetVesselThrust(BackgroundThrustVessel module, double UT)
     {
-        double thrust = 0.0;
+        Vector3d thrust = Vector3d.zero;
         foreach (var engine in module.Engines)
             thrust += engine.Thrust;
         return thrust;
