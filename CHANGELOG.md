@@ -11,3 +11,6 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+
+## 0.1.0
+This is the initial release of Background Thrust.
