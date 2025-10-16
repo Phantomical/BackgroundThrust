@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
@@ -133,20 +134,56 @@ internal static class ModuleEngines_Patch
 [HarmonyPatch(typeof(ModuleEngines), "TimeWarping")]
 internal static class ModuleEngines_TimeWarp_Patch
 {
-    // Avoid disabling FX if we have an enabled background engine.
-    static bool Prefix(ModuleEngines __instance, ref bool __result)
+    static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
-        if (!__instance.part.packed)
-            return true;
+        var deactivateLoopingFxMethod = SymbolExtensions.GetMethodInfo<ModuleEngines>(engines =>
+            engines.DeactivateLoopingFX()
+        );
 
-        var engine = __instance.part.FindModuleImplementing<BackgroundEngine>();
+        var matcher = new CodeMatcher(instructions);
+        matcher
+            .MatchStartForward(
+                new CodeMatch(inst =>
+                {
+                    if (inst.opcode != OpCodes.Callvirt)
+                        return false;
+
+                    if (inst.operand is not MethodInfo method)
+                        return false;
+
+                    return method == deactivateLoopingFxMethod;
+                })
+            )
+            .ThrowIfInvalid("Unable to find call to DeactivateLoopingFX()")
+            .RemoveInstruction()
+            .Insert(
+                new CodeInstruction(
+                    OpCodes.Call,
+                    SymbolExtensions.GetMethodInfo(() => MaybeDeactivateLoopingFX(null))
+                )
+            );
+
+        return matcher.Instructions();
+    }
+
+    static bool HasEnabledBackgroundEngine(ModuleEngines module)
+    {
+        if (!module.part.packed)
+            return false;
+
+        var engine = module.part.FindModuleImplementing<BackgroundEngine>();
         if (engine is null)
-            return true;
+            return false;
 
         if (!engine.IsEnabled)
-            return true;
+            return false;
 
-        __result = false;
-        return false;
+        return true;
+    }
+
+    static void MaybeDeactivateLoopingFX(ModuleEngines module)
+    {
+        if (!HasEnabledBackgroundEngine(module))
+            module.DeactivateLoopingFX();
     }
 }
