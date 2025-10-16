@@ -15,6 +15,10 @@ internal static class VesselResources_Sync_Patch
         BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public
     );
 
+    [HarmonyReversePatch]
+    [HarmonyPatch(typeof(ResourceInfo), "Amount", MethodType.Setter)]
+    static void SetAmount(ResourceInfo info, double amount) { }
+
     static IEnumerable<CodeInstruction> Transpiler(
         IEnumerable<CodeInstruction> instructions,
         ILGenerator gen
@@ -50,10 +54,15 @@ internal static class VesselResources_Sync_Patch
 
     static void AddNullSyncSet(Vessel v, VesselResources resources)
     {
-        var info = resources.GetResource(v, "BackgroundThrust");
+        var info = resources.GetResource(v, KerbalismVesselInfoProvider.ThrustResourceName);
         var pts = (ResourceInfo.PriorityTankSets)PtsField.GetValue(info);
         var wrap = VirtualWrap.Instance;
+
+        // If we don't do this then thrust will continue to accumulate forever,
+        // eventually leading to floating point imprecision.
+        SetAmount(info, 0.0);
         wrap.amount = info.Amount;
+
         pts.Add(wrap, 0);
     }
 

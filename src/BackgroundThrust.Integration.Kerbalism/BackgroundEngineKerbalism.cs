@@ -92,7 +92,9 @@ public class BackgroundEngineKerbalism : BackgroundEngine
             return "bt-engine";
 
         double thrust = node.GetDouble("Thrust");
-        resourceChangeRequest.Add(new("BackgroundThrust", thrust * throttle));
+        resourceChangeRequest.Add(
+            new(KerbalismVesselInfoProvider.ThrustResourceName, thrust * throttle)
+        );
 
         foreach (var propNode in node.GetNodes("PROPELLANT"))
         {

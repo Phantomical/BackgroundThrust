@@ -16,6 +16,8 @@ public class KerbalismVesselInfoProvider : StockVesselInfoProvider
         Localizer.Format("#LOC_BT_Kerbalism_BrokerTitle")
     );
 
+    public const string ThrustResourceName = "_BackgroundThrust";
+
     public override bool AllowBackground => true;
 
     public override bool DisableOnZeroThrustInBackground => false;
@@ -60,6 +62,6 @@ public class KerbalismVesselInfoProvider : StockVesselInfoProvider
         if (vessel.loaded)
             return base.GetVesselThrust(module, UT);
 
-        return ResourceCache.GetResource(vessel, "BackgroundThrust")?.AverageRate ?? 0.0;
+        return ResourceCache.GetResource(vessel, ThrustResourceName)?.AverageRate ?? 0.0;
     }
 }
