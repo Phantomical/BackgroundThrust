@@ -1,4 +1,5 @@
 using System;
+using BackgroundThrust.Utils;
 using UnityEngine;
 
 namespace BackgroundThrust;
@@ -70,6 +71,12 @@ internal class EventDispatcher : MonoBehaviour
 
         if (!vessel.packed)
             return;
+
+        if (!vessel.IsOrbiting())
+        {
+            vessel.ctrlState.mainThrottle = 0f;
+            return;
+        }
 
         double throttle = vessel.ctrlState.mainThrottle * 2.0 - 1.0;
 

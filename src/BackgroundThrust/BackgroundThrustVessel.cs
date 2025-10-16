@@ -47,6 +47,12 @@ public class BackgroundThrustVessel : VesselModule
     /// </summary>
     public double? DryMass = 0.0;
 
+    /// <summary>
+    /// The current thrust applied on this vessel. Zero if not packed or in the
+    /// background.
+    /// </summary>
+    public Vector3d Thrust { get; private set; } = Vector3d.zero;
+
     public TargetHeadingProvider TargetHeading { get; private set; }
 
     private List<BackgroundEngine> _engines = null;
@@ -125,6 +131,7 @@ public class BackgroundThrustVessel : VesselModule
         LastUpdateTime = Planetarium.GetUniversalTime();
         LastUpdateMass = vessel.totalMass;
         throttle = vessel.ctrlState.mainThrottle;
+        Thrust = Vector3d.zero;
     }
     #endregion
 
@@ -132,6 +139,7 @@ public class BackgroundThrustVessel : VesselModule
     void PackedFixedUpdate()
     {
         throttle = vessel.ctrlState.mainThrottle;
+        Thrust = Vector3d.zero;
 
         var provider = Config.VesselInfoProvider;
         var now = Planetarium.GetUniversalTime();
@@ -204,6 +212,7 @@ public class BackgroundThrustVessel : VesselModule
             Thrust = thrust,
         };
 
+        Thrust = thrust;
         TargetHeading.IntegrateThrust(this, parameters);
     }
     #endregion
@@ -281,6 +290,7 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
+        Thrust = thrust;
         TargetHeading.IntegrateThrust(this, parameters);
     }
     #endregion
@@ -348,7 +358,8 @@ public class BackgroundThrustVessel : VesselModule
     public override void OnGoOnRails()
     {
         TargetHeading ??= GetNewHeadingProvider();
-        StartCoroutine(DelayPreserveThrottle(vessel.ctrlState.mainThrottle));
+        if (vessel.IsOrbiting())
+            StartCoroutine(DelayPreserveThrottle(vessel.ctrlState.mainThrottle));
     }
 
     public override void OnGoOffRails()
