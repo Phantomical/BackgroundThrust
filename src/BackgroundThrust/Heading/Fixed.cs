@@ -15,11 +15,5 @@ public sealed class FixedHeading() : TargetHeadingProvider
         this.heading = heading;
     }
 
-    public override Vector3d? GetTargetHeading(double UT)
-    {
-        if (heading == Vector3d.zero)
-            return null;
-
-        return heading;
-    }
+    public override Vector3d GetTargetHeading(double UT) => heading;
 }

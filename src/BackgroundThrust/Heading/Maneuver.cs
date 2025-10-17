@@ -21,17 +21,13 @@ public class Maneuver : TargetHeadingProvider
 
     public Maneuver() { }
 
-    public override Vector3d? GetTargetHeading(double UT)
+    public override Vector3d GetTargetHeading(double UT)
     {
         var node = Node;
         if (node is null)
-            return null;
+            return Vector3d.zero;
 
-        var heading = node.GetBurnVector(Vessel.orbit);
-        if (heading == Vector3d.zero)
-            return null;
-
-        return heading.normalized;
+        return node.GetBurnVector(Vessel.orbit).normalized;
     }
 
     public override void IntegrateThrust(BackgroundThrustVessel module, ThrustParameters parameters)

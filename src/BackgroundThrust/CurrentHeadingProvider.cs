@@ -1,24 +1,44 @@
-using System;
 using BackgroundThrust.Heading;
 using static VesselAutopilot;
 using SpeedDisplayModes = FlightGlobals.SpeedDisplayModes;
 
 namespace BackgroundThrust;
 
+/// <summary>
+/// An interface for getting the current <see cref="TargetHeadingProvider"/>
+/// for a vessel.
+/// </summary>
 public interface ICurrentHeadingProvider
 {
+    /// <summary>
+    /// Get a <see cref="TargetHeadingProvider"/> for the vessel. This should
+    /// return <c>null</c> if the provider has no target heading to provide
+    /// so that the next configured heading provider will get a chance.
+    /// </summary>
+    /// <param name="module"></param>
+    /// <returns></returns>
     public TargetHeadingProvider GetCurrentHeading(BackgroundThrustVessel module);
 }
 
-public class DefaultHeadingProvider : ICurrentHeadingProvider
+/// <summary>
+/// A heading provider for all SAS modes.
+/// </summary>
+public class SASHeadingProvider : ICurrentHeadingProvider
 {
+    public static readonly SASHeadingProvider Instance = new();
+
+    /// <summary>
+    /// Get the current target heading for a vessel. If this returns <c>null</c>
+    /// </summary>
+    /// <param name="module"></param>
+    /// <returns></returns>
     public TargetHeadingProvider GetCurrentHeading(BackgroundThrustVessel module)
     {
         var vessel = module.Vessel;
         var autopilot = vessel.Autopilot;
 
         if (!autopilot.Enabled)
-            return new FixedHeading(vessel.transform.up);
+            return null;
 
         var displayMode = FlightGlobals.speedDisplayMode;
         return displayMode switch

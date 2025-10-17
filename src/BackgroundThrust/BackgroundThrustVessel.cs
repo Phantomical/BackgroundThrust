@@ -156,14 +156,7 @@ public class BackgroundThrustVessel : VesselModule
         if (TargetHeading is null)
             SetTargetHeading(GetFixedHeading());
 
-        if (TargetHeading?.GetTargetHeading(now) is not Vector3d target)
-        {
-            SetThrottle(0.0);
-            SetTargetHeading(null);
-            TimeWarp.SetRate(0, instant: true);
-            ScreenMessages.PostScreenMessage("Maneuver Complete. Cutting thrust.");
-            return;
-        }
+        var target = TargetHeading.GetTargetHeading(now);
 
         // Protect against invalid heading vectors before they cause the vessel
         // to get deleted because its state is NaN.
@@ -257,13 +250,6 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
-        if (TargetHeading.GetTargetHeading(UT) is null)
-        {
-            SetTargetHeading(null);
-            SetThrottle(0.0, UT);
-            return;
-        }
-
         var thrust = provider.GetVesselThrust(this, UT);
         var parameters = new ThrustParameters
         {
@@ -306,8 +292,8 @@ public class BackgroundThrustVessel : VesselModule
 
     private TargetHeadingProvider GetNewHeadingProvider()
     {
-        var provider = Config.HeadingProvider.GetCurrentHeading(this);
-        provider.Vessel = Vessel;
+        var provider = Config.GetTargetHeading(this);
+        provider?.Vessel = Vessel;
         return provider;
     }
 

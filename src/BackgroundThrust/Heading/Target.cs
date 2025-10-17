@@ -38,11 +38,11 @@ public class Target : TargetBase
     public Target(ITargetable target)
         : base(target) { }
 
-    public override Vector3d? GetTargetHeading(double UT)
+    public override Vector3d GetTargetHeading(double UT)
     {
         var target = Target;
         if (target is null)
-            return null;
+            return Vector3d.zero;
 
         var vpos = Vessel.ReferenceTransform.position;
         var tpos = target.GetTransform().position;
@@ -58,11 +58,11 @@ public class AntiTarget : Target
     public AntiTarget(ITargetable target)
         : base(target) { }
 
-    public override Vector3d? GetTargetHeading(double UT)
+    public override Vector3d GetTargetHeading(double UT)
     {
         if (base.GetTargetHeading(UT) is Vector3d heading)
             return -heading;
-        return null;
+        return Vector3d.zero;
     }
 }
 
@@ -73,11 +73,11 @@ public class TargetPrograde : TargetBase
     public TargetPrograde(ITargetable target)
         : base(target) { }
 
-    public override Vector3d? GetTargetHeading(double UT)
+    public override Vector3d GetTargetHeading(double UT)
     {
         var target = Target;
         if (target is null)
-            return null;
+            return Vector3d.zero;
 
         var vvel = Vessel.obt_velocity;
         var tvel = target.GetObtVelocity();
@@ -93,10 +93,10 @@ public class TargetRetrograde : TargetPrograde
     public TargetRetrograde(ITargetable target)
         : base(target) { }
 
-    public override Vector3d? GetTargetHeading(double UT)
+    public override Vector3d GetTargetHeading(double UT)
     {
         if (base.GetTargetHeading(UT) is Vector3d heading)
             return -heading;
-        return null;
+        return Vector3d.zero;
     }
 }

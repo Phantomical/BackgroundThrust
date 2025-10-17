@@ -47,10 +47,9 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
     ///   <c><see cref="Planetarium.GetUniversalTime"/>()</c>.
     /// </param>
     /// <returns>
-    ///   A vector representing the target thrust direction, or <c>null</c> if
-    ///   the vessel should stop thrust.
+    ///   A vector representing the target thrust direction.
     /// </returns>
-    public abstract Vector3d? GetTargetHeading(double UT);
+    public abstract Vector3d GetTargetHeading(double UT);
 
     /// <summary>
     /// Update the orbit of the current vessel to account for the change in
