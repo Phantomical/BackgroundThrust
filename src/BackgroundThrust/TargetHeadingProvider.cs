@@ -1,4 +1,8 @@
+using System;
+using System.CodeDom;
+using System.Numerics;
 using BackgroundThrust.Utils;
+using UnityEngine;
 using static BackgroundThrust.Utils.MathUtil;
 
 namespace BackgroundThrust;
@@ -49,7 +53,7 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
     /// <returns>
     ///   A vector representing the target thrust direction.
     /// </returns>
-    public abstract Vector3d GetTargetHeading(double UT);
+    public abstract TargetHeading GetTargetHeading(double UT);
 
     /// <summary>
     /// Update the orbit of the current vessel to account for the change in
@@ -93,4 +97,43 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
 
     internal static new void RegisterAll() =>
         DynamicallySerializable<TargetHeadingProvider>.RegisterAll();
+}
+
+public struct TargetHeading(QuaternionD orientation)
+{
+    public static readonly TargetHeading Invalid = default;
+
+    /// <summary>
+    /// The orientation of the vessel. An identity quaternion is equivalent to
+    /// forward laying on the X axis and up on the Y axis.
+    ///
+    /// Note that the heading vector of the ship is <c>transform.up</c>, not
+    /// <c>transform.forward</c>.
+    /// </summary>
+    public QuaternionD Orientation = orientation;
+
+    public TargetHeading(Transform transform)
+        : this(transform.rotation) { }
+
+    public TargetHeading(Vector3d forward)
+        : this(forward, Vector3d.up) { }
+
+    public TargetHeading(Vector3d forward, Vessel vessel)
+        : this(forward, vessel.ReferenceTransform?.up ?? Vector3d.up) { }
+
+    public TargetHeading(Vector3d forward, Vector3d up)
+        : this(QuaternionD.LookRotation(forward, up)) { }
+
+    public readonly bool IsValid()
+    {
+        var q = Orientation;
+        var mag2 = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+
+        if (double.IsNaN(mag2) || double.IsInfinity(mag2))
+            return false;
+        if (Math.Abs(mag2) < 1e-4)
+            return false;
+
+        return true;
+    }
 }

@@ -38,16 +38,24 @@ public class Target : TargetBase
     public Target(ITargetable target)
         : base(target) { }
 
-    public override Vector3d GetTargetHeading(double UT)
+    protected Vector3d? GetTargetDirection(double UT)
     {
         var target = Target;
         if (target is null)
-            return Vector3d.zero;
+            return null;
 
-        var vpos = Vessel.ReferenceTransform.position;
-        var tpos = target.GetTransform().position;
+        Vector3d vpos = Vessel.ReferenceTransform.position;
+        Vector3d tpos = target.GetTransform().position;
 
         return (tpos - vpos).normalized;
+    }
+
+    public override TargetHeading GetTargetHeading(double UT)
+    {
+        if (GetTargetDirection(UT) is not Vector3d target)
+            return default;
+
+        return new(target, Vessel);
     }
 }
 
@@ -58,11 +66,11 @@ public class AntiTarget : Target
     public AntiTarget(ITargetable target)
         : base(target) { }
 
-    public override Vector3d GetTargetHeading(double UT)
+    public override TargetHeading GetTargetHeading(double UT)
     {
-        if (base.GetTargetHeading(UT) is Vector3d heading)
-            return -heading;
-        return Vector3d.zero;
+        if (GetTargetDirection(UT) is not Vector3d target)
+            return default;
+        return new(-target, Vessel);
     }
 }
 
@@ -73,16 +81,24 @@ public class TargetPrograde : TargetBase
     public TargetPrograde(ITargetable target)
         : base(target) { }
 
-    public override Vector3d GetTargetHeading(double UT)
+    protected Vector3d? GetRelVelocityDirection(double UT)
     {
         var target = Target;
         if (target is null)
-            return Vector3d.zero;
+            return null;
 
-        var vvel = Vessel.obt_velocity;
-        var tvel = target.GetObtVelocity();
+        Vector3d vvel = Vessel.obt_velocity;
+        Vector3d tvel = target.GetObtVelocity();
 
         return (vvel - tvel).normalized;
+    }
+
+    public override TargetHeading GetTargetHeading(double UT)
+    {
+        if (GetRelVelocityDirection(UT) is not Vector3d heading)
+            return default;
+
+        return new(heading, Vessel);
     }
 }
 
@@ -93,10 +109,11 @@ public class TargetRetrograde : TargetPrograde
     public TargetRetrograde(ITargetable target)
         : base(target) { }
 
-    public override Vector3d GetTargetHeading(double UT)
+    public override TargetHeading GetTargetHeading(double UT)
     {
-        if (base.GetTargetHeading(UT) is Vector3d heading)
-            return -heading;
-        return Vector3d.zero;
+        if (GetRelVelocityDirection(UT) is not Vector3d heading)
+            return default;
+
+        return new(-heading, Vessel);
     }
 }

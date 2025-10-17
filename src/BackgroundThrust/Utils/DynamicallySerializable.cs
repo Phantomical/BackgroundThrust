@@ -28,7 +28,7 @@ public abstract class DynamicallySerializable<T>
 
     public void Save(ConfigNode node)
     {
-        node.AddValue("name", GetType().Name);
+        node.AddValue("name", GetType().FullName);
         OnSave(node);
     }
 
@@ -77,17 +77,13 @@ public abstract class DynamicallySerializable<T>
                     continue;
                 }
 
-                if (entries.ContainsKey(type.Name))
+                if (entries.ContainsKey(type.FullName))
                 {
-                    var other = entries[type.Name];
-
-                    LogUtil.Error(
-                        $"Name conflict: types {type.FullName} and {other.FullName} both have name {type.Name}"
-                    );
+                    LogUtil.Error($"Name conflict: multiple types with full name {type.FullName}");
                     continue;
                 }
 
-                entries.Add(type.Name, type);
+                entries.Add(type.FullName, type);
             }
         }
 

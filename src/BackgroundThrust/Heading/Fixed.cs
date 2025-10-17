@@ -1,19 +1,22 @@
+using UnityEngine;
+
 namespace BackgroundThrust.Heading;
 
 public sealed class FixedHeading() : TargetHeadingProvider
 {
     [KSPField(isPersistant = true)]
-    Vector3d heading;
+    QuaternionD orientation;
 
-    public Vector3d Heading => heading;
+    public QuaternionD Orientation => orientation;
 
-    public FixedHeading(Vector3d heading)
+    public FixedHeading(QuaternionD orientation)
         : this()
     {
-        if (heading != Vector3d.zero)
-            heading = heading.normalized;
-        this.heading = heading;
+        this.orientation = orientation;
     }
 
-    public override Vector3d GetTargetHeading(double UT) => heading;
+    public FixedHeading(Transform transform)
+        : this(transform.rotation) { }
+
+    public override TargetHeading GetTargetHeading(double UT) => new(orientation);
 }

@@ -160,17 +160,18 @@ public class BackgroundThrustVessel : VesselModule
 
         // Protect against invalid heading vectors before they cause the vessel
         // to get deleted because its state is NaN.
-        var mag2 = target.sqrMagnitude;
-        if (mag2 == 0.0 || double.IsInfinity(mag2) || double.IsNaN(mag2))
+        if (!target.IsValid())
         {
             var tname = TargetHeading.GetType().Name;
+            var q = target.Orientation;
+            var mag2 = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
 
             if (double.IsInfinity(mag2))
-                LogUtil.Error($"{tname}.GetTargetHeading returned infinite heading vector");
+                LogUtil.Error($"{tname}.GetTargetHeading returned infinite quaternion");
             else if (double.IsNaN(mag2))
-                LogUtil.Error($"{tname}.GetTargetHeading returned NaN heading vector");
+                LogUtil.Error($"{tname}.GetTargetHeading returned NaN quaternion");
             else
-                LogUtil.Error($"{tname}.GetTargetHeading returned zero heading vector");
+                LogUtil.Error($"{tname}.GetTargetHeading returned zero quaternion");
 
             SetThrottle(0.0);
             SetTargetHeading(null);
@@ -178,8 +179,6 @@ public class BackgroundThrustVessel : VesselModule
             ScreenMessages.PostScreenMessage("Recieved invalid heading vector. Cutting thrust.");
             return;
         }
-
-        target = target.normalized;
 
         foreach (var engine in Engines)
             engine.PackedEngineUpdate();
@@ -189,12 +188,7 @@ public class BackgroundThrustVessel : VesselModule
             return;
 
         // Make sure that the vessel is pointing in the target direction.
-        var heading = Heading;
-        vessel.transform.Rotate(
-            Quaternion.FromToRotation(heading, (Vector3)target).eulerAngles,
-            Space.World
-        );
-        vessel.SetRotation(vessel.transform.rotation);
+        RotateToOrientation(target.Orientation);
 
         var parameters = new ThrustParameters
         {
@@ -282,6 +276,12 @@ public class BackgroundThrustVessel : VesselModule
     #endregion
 
     #region Helpers
+    // This is its own method so that it can be patched in the future if needed.
+    private void RotateToOrientation(QuaternionD target)
+    {
+        vessel.SetRotation(target);
+    }
+
     private IEnumerator DelayPreserveThrottle(float throttle, int frames = 1)
     {
         for (int i = 0; i < frames; ++i)
@@ -299,7 +299,7 @@ public class BackgroundThrustVessel : VesselModule
 
     public FixedHeading GetFixedHeading()
     {
-        return new(Heading) { Vessel = vessel };
+        return new(vessel.ReferenceTransform.rotation) { Vessel = vessel };
     }
 
     public double ComputeDryMass()
@@ -330,14 +330,10 @@ public class BackgroundThrustVessel : VesselModule
         // If we are actively thrusting towards a heading then rotate the vessel
         // to point that way.
         var now = Planetarium.GetUniversalTime();
-        if (TargetHeading?.GetTargetHeading(now) is Vector3d target)
+        if (TargetHeading?.GetTargetHeading(now) is TargetHeading target && target.IsValid())
         {
             // Make sure that the vessel is pointing in the target direction.
-            vessel.transform.Rotate(
-                Quaternion.FromToRotation(Heading, (Vector3)target).eulerAngles,
-                Space.World
-            );
-            vessel.SetRotation(vessel.transform.rotation);
+            vessel.SetRotation(target.Orientation);
         }
     }
 
@@ -350,7 +346,7 @@ public class BackgroundThrustVessel : VesselModule
 
     public override void OnGoOffRails()
     {
-        TargetHeading = null;
+        SetTargetHeading(null);
 
         var ctrlState = vessel.setControlStates[Vessel.GroupOverride];
         ctrlState.mainThrottle = vessel.ctrlState.mainThrottle;
@@ -398,7 +394,7 @@ public class BackgroundThrustVessel : VesselModule
     {
         base.OnSave(node);
 
-        TargetHeading ??= GetFixedHeading();
+        TargetHeading ??= Config.GetTargetHeading(this);
         TargetHeading.Save(node.AddNode("TARGET_HEADING"));
 
         if (vessel?.ctrlState?.mainThrottle is float throttle)

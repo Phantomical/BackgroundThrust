@@ -1,24 +1,27 @@
+using UnityEngine;
+
 namespace BackgroundThrust.Heading;
 
 public class CurrentHeading() : TargetHeadingProvider
 {
     [KSPField(isPersistant = true)]
-    Vector3d heading = Vector3d.zero;
+    QuaternionD orientation;
 
-    public override Vector3d GetTargetHeading(double UT)
+    public override TargetHeading GetTargetHeading(double UT)
     {
-        if (Vessel is null)
-            return heading;
-
         if (Vessel.loaded)
-            return Vessel.ReferenceTransform.up;
+        {
+            orientation = Vessel.ReferenceTransform.rotation;
+            return new(Vessel.ReferenceTransform);
+        }
 
-        return heading;
+        return new(orientation);
     }
 
     protected override void OnSave(ConfigNode node)
     {
-        heading = Vessel?.ReferenceTransform?.up ?? Vector3d.zero;
+        if (Vessel?.loaded ?? false)
+            orientation = Vessel.ReferenceTransform.rotation;
 
         base.OnSave(node);
     }

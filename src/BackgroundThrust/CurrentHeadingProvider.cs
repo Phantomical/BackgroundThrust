@@ -130,7 +130,7 @@ public class SASHeadingProvider : ICurrentHeadingProvider
                 goto default;
 
             default:
-                return new FixedHeading(vessel.transform.up);
+                return new FixedHeading(vessel.ReferenceTransform.rotation);
         }
     }
 }

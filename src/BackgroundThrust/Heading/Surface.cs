@@ -2,30 +2,34 @@ namespace BackgroundThrust.Heading;
 
 public class SurfacePrograde : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) => Vessel.srf_velocity.normalized;
+    public override TargetHeading GetTargetHeading(double UT) =>
+        new(Vessel.srf_velocity.normalized, Vessel);
 }
 
 public class SurfaceRetrograde : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) => -Vessel.srf_velocity.normalized;
+    public override TargetHeading GetTargetHeading(double UT) =>
+        new(-Vessel.srf_velocity.normalized, Vessel);
 }
 
 public class SurfaceNormal : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) => Vessel.mainBody.RotationAxis;
+    public override TargetHeading GetTargetHeading(double UT) =>
+        new(Vessel.mainBody.RotationAxis, Vessel);
 }
 
 public class SurfaceAntiNormal : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) => -Vessel.mainBody.RotationAxis;
+    public override TargetHeading GetTargetHeading(double UT) =>
+        new(-Vessel.mainBody.RotationAxis, Vessel);
 }
 
 public class SurfaceRadialIn : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) => Vessel.upAxis;
+    public override TargetHeading GetTargetHeading(double UT) => new(Vessel.upAxis, Vessel);
 }
 
 public class SurfaceRadialOut : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) => -Vessel.upAxis;
+    public override TargetHeading GetTargetHeading(double UT) => new(-Vessel.upAxis, Vessel);
 }

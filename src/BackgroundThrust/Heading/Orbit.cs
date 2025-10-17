@@ -2,36 +2,36 @@ namespace BackgroundThrust.Heading;
 
 public sealed class OrbitPrograde() : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) =>
-        OrbitMath.GetOrbitProgradeAtUT(Vessel, UT);
+    public override TargetHeading GetTargetHeading(double UT) =>
+        new(OrbitMath.GetOrbitProgradeAtUT(Vessel, UT), Vessel);
 }
 
 public sealed class OrbitRetrograde() : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) =>
-        OrbitMath.GetOrbitRetrogradeAtUT(Vessel, UT);
+    public override TargetHeading GetTargetHeading(double UT) =>
+        new(OrbitMath.GetOrbitRetrogradeAtUT(Vessel, UT), Vessel);
 }
 
 public sealed class OrbitNormal() : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) =>
-        OrbitMath.GetOrbitNormalAtUT(Vessel, UT);
+    public override TargetHeading GetTargetHeading(double UT) =>
+        new(OrbitMath.GetOrbitNormalAtUT(Vessel, UT), Vessel);
 }
 
 public sealed class OrbitAntiNormal() : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) =>
-        OrbitMath.GetOrbitAntiNormalAtUT(Vessel, UT);
+    public override TargetHeading GetTargetHeading(double UT) =>
+        new(OrbitMath.GetOrbitAntiNormalAtUT(Vessel, UT), Vessel);
 }
 
 public sealed class OrbitRadialIn() : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) =>
-        OrbitMath.GetOrbitRadialInAtUT(Vessel, UT);
+    public override TargetHeading GetTargetHeading(double UT) =>
+        new(OrbitMath.GetOrbitRadialInAtUT(Vessel, UT), Vessel);
 }
 
 public sealed class OrbitRadialOut() : TargetHeadingProvider
 {
-    public override Vector3d GetTargetHeading(double UT) =>
-        OrbitMath.GetOrbitRadialOutAtUT(Vessel, UT);
+    public override TargetHeading GetTargetHeading(double UT) =>
+        new(OrbitMath.GetOrbitRadialOutAtUT(Vessel, UT), Vessel);
 }
