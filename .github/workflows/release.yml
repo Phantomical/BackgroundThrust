@@ -70,6 +70,6 @@ jobs:
           version: '${{ env.STRIPPED_VERSION }}'
           # KSP1 gameid. Retrieve from https://spacedock.info/api/games
           game_id: '3102'
-          mod_id: '4008'
+          mod_id: '4009'
           zipball: BackgroundThrust.zip
           changelog: CHANGELOG.md
