@@ -11,6 +11,7 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.1.1
 ### Added
 * Allow entering time warp while the vessel is under thrust.
 * Accurately update the G-force meter while in time warp.
