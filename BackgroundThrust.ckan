@@ -13,3 +13,6 @@ depends:
 suggests:
   - name: BackgroundResourceProcessing
     min_version: 0.2.0
+
+conflicts:
+  - name: PersistentThrust
