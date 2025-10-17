@@ -11,6 +11,11 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.1.2
+### Changed
+* Adjust patch for `TimeWarp.setTimeRate` to be more compatible with other mods
+  making similar patches.
+
 ## 0.1.1
 ### Added
 * Allow entering time warp while the vessel is under thrust.
