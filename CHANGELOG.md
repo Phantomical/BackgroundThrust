@@ -11,6 +11,10 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.1.3
+### Fixed
+* Fix normal and antinormal SAS modes to work the same way as KSP's SAS modes.
+
 ## 0.1.2
 ### Changed
 * Adjust patch for `TimeWarp.setTimeRate` to be more compatible with other mods
