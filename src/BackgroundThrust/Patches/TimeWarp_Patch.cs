@@ -12,9 +12,13 @@ internal static class TimeWarp_SetRate_Patch
         ILGenerator gen
     )
     {
+        const ControlTypes THROTTLE_MASK = ~(ControlTypes.THROTTLE | ControlTypes.THROTTLE_CUT_MAX);
+
         var setControlLockMethod = SymbolExtensions.GetMethodInfo(() =>
             InputLockManager.SetControlLock(ControlTypes.None, "")
         );
+
+        var lockId = gen.DeclareLocal(typeof(string));
 
         var matcher = new CodeMatcher(instructions, gen);
         matcher
@@ -22,21 +26,14 @@ internal static class TimeWarp_SetRate_Patch
                 new CodeMatch(new CodeInstruction(OpCodes.Call, setControlLockMethod))
             )
             .ThrowIfInvalid("Unable to find call to InputLockManager.SetControlLock")
-            .RemoveInstruction()
-            .Insert(CodeInstruction.Call(() => SetControlLockFiltered(ControlTypes.None, "")));
+            .MatchEndBackwards(new CodeMatch(OpCodes.Ldstr, "TimeWarpLock"))
+            .ThrowIfInvalid("Unable to find ldstr instruction")
+            .Insert(
+                new CodeInstruction(OpCodes.Ldc_I8, unchecked((long)THROTTLE_MASK)),
+                new CodeInstruction(OpCodes.And)
+            );
 
         return matcher.Instructions();
-    }
-
-    static ControlTypes SetControlLockFiltered(ControlTypes controlTypes, string lockId)
-    {
-        const ControlTypes THROTTLE_MASK = ~(ControlTypes.THROTTLE | ControlTypes.THROTTLE_CUT_MAX);
-
-        // LogUtil.Log($"Initial: 0x{(ulong)controlTypes:X16}");
-        // LogUtil.Log($"Mask:    0x{(ulong)THROTTLE_MASK:X16}");
-        // LogUtil.Log($"Final:   0x{(long)(controlTypes & THROTTLE_MASK):X16}");
-
-        return InputLockManager.SetControlLock(controlTypes & THROTTLE_MASK, lockId);
     }
 }
 
