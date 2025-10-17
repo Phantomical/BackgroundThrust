@@ -11,7 +11,7 @@ public static class OrbitMath
     public static Vector3d GetOrbitRetrogradeAtUT(Vessel vessel, double UT) =>
         -GetOrbitProgradeAtUT(vessel, UT);
 
-    public static Vector3d GetOrbitNormalAtUT(Vessel vessel, double UT) => vessel.orbit.Normal(UT);
+    public static Vector3d GetOrbitNormalAtUT(Vessel vessel, double UT) => vessel.orbit.h.xzy;
 
     public static Vector3d GetOrbitAntiNormalAtUT(Vessel vessel, double UT) =>
         -GetOrbitNormalAtUT(vessel, UT);
