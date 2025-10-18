@@ -11,7 +11,8 @@
     "kind": "metapackage",
     "depends": [
         { "name": "Harmony2" },
-        { "name": "BackgroundResourceProcessing",   "suppress_recommendations": true }
+        { "name": "BackgroundResourceProcessing",   "suppress_recommendations": true },
+        { "name": "MechJeb2",                       "suppress_recommendations": true }
     ],
     "recommends": [
         { "name": "KSPCommunityFixes" },

@@ -15,6 +15,6 @@ public class MechJebCurrentHeadingProvider : ICurrentHeadingProvider
         if (!attitude.enabled)
             return null;
 
-        return null;
+        return new SmartASS();
     }
 }
