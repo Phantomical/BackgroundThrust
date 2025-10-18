@@ -63,7 +63,7 @@ into your KSP install's `GameData` folder.
 > To do this you will need to run the following command in an admin `cmd.exe`
 > prompt (for windows) in your `GameData` directory:
 > ```batch
-> mklink /j 000_PluginLoader C:\path\to\BackgroundThrust\repo\GameData\BackgroundThrust
+> mklink /j BackgroundThrust C:\path\to\BackgroundThrust\repo\GameData\BackgroundThrust
 > ```
 >
 > On Linux or MacOS you should be able to accomplish the same thing using `ln`.
