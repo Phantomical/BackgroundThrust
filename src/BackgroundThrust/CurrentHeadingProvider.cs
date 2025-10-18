@@ -93,11 +93,11 @@ public class SASHeadingProvider : ICurrentHeadingProvider
         {
             case AutopilotMode.Prograde:
                 if (vessel.targetObject is not null)
-                    return new TargetPrograde(vessel.targetObject);
+                    return new TargetPrograde();
                 goto default;
             case AutopilotMode.Retrograde:
                 if (vessel.targetObject is not null)
-                    return new TargetRetrograde(vessel.targetObject);
+                    return new TargetRetrograde();
                 goto default;
 
             default:
@@ -117,11 +117,11 @@ public class SASHeadingProvider : ICurrentHeadingProvider
 
             case AutopilotMode.Target:
                 if (vessel.targetObject is not null)
-                    return new Target(vessel.targetObject);
+                    return new Target();
                 goto default;
             case AutopilotMode.AntiTarget:
                 if (vessel.targetObject is not null)
-                    return new AntiTarget(vessel.targetObject);
+                    return new AntiTarget();
                 goto default;
 
             case AutopilotMode.Maneuver:

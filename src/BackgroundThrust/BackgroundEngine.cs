@@ -17,7 +17,6 @@ public class BackgroundEngine : PartModule
         Instance
     );
 
-    public BackgroundThrustVessel VesselModule { get; private set; }
     public MultiModeEngine MultiModeEngine { get; private set; }
     public ModuleEngines Engine { get; private set; }
 
@@ -54,14 +53,12 @@ public class BackgroundEngine : PartModule
 
         GameEvents.onTimeWarpRateChanged.Add(OnTimeWarpRateChanged);
         GameEvents.onVesselGoOffRails.Add(OnVesselGoOffRails);
-        GameEvents.onVesselPartCountChanged.Add(OnVesselPartCountChanged);
     }
 
     void OnDestroy()
     {
         GameEvents.onTimeWarpRateChanged.Remove(OnTimeWarpRateChanged);
         GameEvents.onVesselGoOffRails.Remove(OnVesselGoOffRails);
-        GameEvents.onVesselPartCountChanged.Remove(OnVesselPartCountChanged);
     }
 
     internal void OnMultiModeEngineSwitchActive()
@@ -89,14 +86,6 @@ public class BackgroundEngine : PartModule
             return;
 
         ClearBuffers();
-    }
-
-    internal void OnVesselPartCountChanged(Vessel vessel)
-    {
-        if (vessel != this.vessel)
-            return;
-
-        VesselModule = null;
     }
     #endregion
 

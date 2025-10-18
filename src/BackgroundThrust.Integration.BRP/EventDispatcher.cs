@@ -64,7 +64,7 @@ public class EventDispatcher : MonoBehaviour
         if (vesselModules.TryGetValue(v.id, out var module))
             return module;
 
-        module = v.FindVesselModuleImplementing<BackgroundThrustVessel>();
+        module = v.GetBackgroundThrust();
         vesselModules[v.id] = module;
         return module;
     }

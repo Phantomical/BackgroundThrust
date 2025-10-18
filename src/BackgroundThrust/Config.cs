@@ -6,10 +6,9 @@ namespace BackgroundThrust;
 
 public static class Config
 {
-    public static readonly EventData<GameEvents.HostedFromToAction<
-        Vessel,
-        VesselAutopilot.AutopilotMode
-    >> onAutopilotModeChange = new("onAutopilotModeChange");
+    public static readonly EventData<
+        HostedFromToAction<Vessel, VesselAutopilot.AutopilotMode>
+    > onAutopilotModeChange = new("onAutopilotModeChange");
 
     /// <summary>
     /// This event is emitted when the throttle is changed on the vessel.

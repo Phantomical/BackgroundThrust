@@ -49,7 +49,7 @@ internal static class TimeWarp_GetMaxOnRailsRateIdx_Patch
         if (timeWarp.current_rate_index > timeWarp.maxPhysicsRate_index)
             return true;
 
-        var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
+        var module = vessel.GetBackgroundThrust();
         if (module.Throttle != 0.0)
             return true;
 

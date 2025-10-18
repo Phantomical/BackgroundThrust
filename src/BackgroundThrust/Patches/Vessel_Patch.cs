@@ -17,7 +17,7 @@ internal static class Vessel_UpdateAcceleration_Patch
         if (!vessel.IsOrbiting())
             return;
 
-        var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
+        var module = vessel.GetBackgroundThrust();
         var accel = module.Thrust.magnitude / vessel.totalMass;
         if (MathUtil.IsFinite(accel))
             vessel.geeForce = accel / PhysicsGlobals.GravitationalAcceleration;

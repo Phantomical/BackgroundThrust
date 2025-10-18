@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using BackgroundThrust.Utils;
 using UnityEngine;
 
@@ -7,6 +8,25 @@ namespace BackgroundThrust;
 [KSPAddon(KSPAddon.Startup.AllGameScenes, once: false)]
 internal class EventDispatcher : MonoBehaviour
 {
+    internal static EventDispatcher Instance;
+
+    #region VesselModule Caching
+    readonly Dictionary<Guid, BackgroundThrustVessel> modules = [];
+
+    internal BackgroundThrustVessel GetVesselModule(Vessel v)
+    {
+        if (!modules.TryGetValue(v.id, out var module))
+        {
+            module = v.FindVesselModuleImplementing<BackgroundThrustVessel>();
+            modules[v.id] = module;
+        }
+
+        return module;
+    }
+    #endregion
+
+
+    #region Event Handlers
     void Awake()
     {
         if (HighLogic.LoadedSceneIsEditor)
@@ -20,13 +40,19 @@ internal class EventDispatcher : MonoBehaviour
     {
         GameEvents.onVesselPartCountChanged.Add(OnVesselPartCountChanged);
         GameEvents.onMultiModeEngineSwitchActive.Add(OnMultiModeEngineSwitchActive);
+        GameEvents.onVesselDestroy.Add(OnVesselDestroy);
         Config.onAutopilotModeChange.Add(OnVesselAutopilotModeChanged);
+
+        Instance = this;
     }
 
     void OnDestroy()
     {
+        Instance = null;
+
         GameEvents.onVesselWasModified.Remove(OnVesselPartCountChanged);
         GameEvents.onMultiModeEngineSwitchActive.Remove(OnMultiModeEngineSwitchActive);
+        GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
         Config.onAutopilotModeChange.Remove(OnVesselAutopilotModeChanged);
     }
 
@@ -58,6 +84,13 @@ internal class EventDispatcher : MonoBehaviour
         module.OnMultiModeEngineSwitchActive();
     }
 
+    void OnVesselDestroy(Vessel vessel)
+    {
+        modules.Remove(vessel.id);
+    }
+    #endregion
+
+    #region FixedUpdate
     // Even if we clear the input locks then stock doesn't seem to want to
     // allow the throttle to be adjusted. As such, we implement that ourselves.
     void FixedUpdate()
@@ -107,4 +140,5 @@ internal class EventDispatcher : MonoBehaviour
 
         vessel.ctrlState.mainThrottle = (float)(throttle + 1.0) * 0.5f;
     }
+    #endregion
 }
