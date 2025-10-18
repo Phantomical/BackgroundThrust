@@ -11,6 +11,15 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.2.0
+### Added
+* Added ability to use all MechJeb smart ASS modes in warp.
+
+### Changed
+* Background Thrust is now marked as conflicting with Persistent Thrust on CKAN.
+* Reworked a bunch of the internal APIs to work better when there are multiple
+  possible SAS providers.
+
 ## 0.1.3
 ### Fixed
 * Fix normal and antinormal SAS modes to work the same way as KSP's SAS modes.
