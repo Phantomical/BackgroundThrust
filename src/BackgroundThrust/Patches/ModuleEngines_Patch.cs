@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using BackgroundThrust.Utils;
 using HarmonyLib;
+using PreFlightTests;
 
 namespace BackgroundThrust.Patches;
 
@@ -131,8 +133,21 @@ internal static class ModuleEngines_Patch
 }
 
 [HarmonyPatch(typeof(ModuleEngines), "TimeWarping")]
-internal static class ModuleEngines_TimeWarp_Patch
+internal static class ModuleEngines_TimeWarping_Patch
 {
+    static bool Prefix(ref bool __result)
+    {
+        // We actually want to run the vessel in warp. But only as part of
+        // BackgroundThrust.PackedUpdate, not for regular FixedUpdate calls.
+        if (BackgroundEngine.InPackedUpdate)
+        {
+            __result = false;
+            return false;
+        }
+
+        return true;
+    }
+
     static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
         var deactivateLoopingFxMethod = SymbolExtensions.GetMethodInfo<ModuleEngines>(engines =>
@@ -184,5 +199,44 @@ internal static class ModuleEngines_TimeWarp_Patch
     {
         if (!HasEnabledBackgroundEngine(module))
             module.DeactivateLoopingFX();
+    }
+}
+
+[HarmonyPatch(typeof(ModuleEngines), "ThrustUpdate")]
+internal static class ModuleEngines_ThrustUpdate_Patch
+{
+    static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        var addForceAtPositionMethod = SymbolExtensions.GetMethodInfo(
+            (Part part) => part.AddForceAtPosition(default, default)
+        );
+
+        var matcher = new CodeMatcher(instructions);
+        matcher
+            .MatchStartForward(
+                new CodeMatch(inst =>
+                {
+                    if (inst.opcode != OpCodes.Callvirt)
+                        return false;
+                    if (inst.operand is not MethodInfo method)
+                        return false;
+                    return method == addForceAtPositionMethod;
+                })
+            )
+            .ThrowIfInvalid("Unable to find call to Part.AddForceAtPosition")
+            .Set(
+                OpCodes.Call,
+                SymbolExtensions.GetMethodInfo(() => AddForceAtPosition(null, default, default))
+            );
+
+        return matcher.Instructions();
+    }
+
+    internal static void AddForceAtPosition(Part part, Vector3d force, Vector3d pos)
+    {
+        if (BackgroundEngine.InPackedUpdate)
+            BackgroundEngine.ThrustAccumulator += force;
+        else
+            part.AddForceAtPosition(force, pos);
     }
 }

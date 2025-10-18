@@ -3,19 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using BackgroundThrust.Patches;
+using BackgroundThrust.Utils;
 using UnityEngine;
 
 namespace BackgroundThrust;
 
 public class BackgroundEngine : PartModule
 {
-    const BindingFlags Instance =
-        BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-
-    private static readonly FieldInfo IsThrustingField = typeof(ModuleEngines).GetField(
-        "isThrusting",
-        Instance
-    );
+    public static bool InPackedUpdate { get; private set; }
+    public static Vector3d ThrustAccumulator = Vector3d.zero;
 
     public MultiModeEngine MultiModeEngine { get; private set; }
     public ModuleEngines Engine { get; private set; }
@@ -101,65 +97,39 @@ public class BackgroundEngine : PartModule
         if (!IsEnabled)
         {
             Thrust = Vector3d.zero;
+            Engine.finalThrust = 0f;
             Engine.DeactivateLoopingFX();
             ClearBuffers();
             return;
         }
 
-        Engine.UpdateThrottle();
-        Engine.currentThrottle = ModuleEngines_Patch.ApplyThrottleAdjustments(
-            Engine,
-            Engine.currentThrottle
-        );
-        if (Engine.EngineIgnited)
-            ModuleEngines_Patch.UpdatePropellantStatus(Engine);
-        PackedThrustUpdate();
-        Engine.FXUpdate();
+        using var guard = GetPackedUpdateGuard();
+
+        // Various patches to ModuleEngines take care of changing the relevant
+        // behaviour when InPackedUpdate is set to true.
+        Engine.FixedUpdate();
+        Thrust = ThrustAccumulator;
     }
 
-    private void PackedThrustUpdate()
+    protected PackedUpdateGuard GetPackedUpdateGuard()
     {
-        var engine = Engine;
+        ThrustAccumulator = Vector3d.zero;
+        return new();
+    }
 
-        if (!engine.EngineIgnited)
+    protected readonly struct PackedUpdateGuard : IDisposable
+    {
+        public PackedUpdateGuard()
         {
-            ModuleEngines_Patch.ThrustUpdate(engine);
-            return;
+            InPackedUpdate = true;
         }
 
-        engine.finalThrust = engine.CalculateThrust() * vessel.VesselValues.EnginePower.value;
-        if (engine.finalThrust > 0f)
+        public void Dispose()
         {
-            IsThrustingField.SetValue(engine, true);
-
-            var thrust = Vector3d.zero;
-            int count = engine.thrustTransforms.Count;
-            for (int i = 0; i < count; ++i)
-            {
-                var transform = engine.thrustTransforms[i];
-                var mult = engine.thrustTransformMultipliers[i];
-                var force = -transform.forward * engine.finalThrust * mult;
-                thrust += force;
-            }
-
-            double kilowatts =
-                engine.heatProduction
-                * (engine.finalThrust / engine.maxThrust)
-                * vessel.VesselValues.HeatProduction.value
-                * PhysicsGlobals.InternalHeatProductionFactor
-                * part.thermalMass;
-            if (engine.normalizeHeatForFlow)
-                kilowatts /= engine.flowMultiplier;
-
-            part.AddThermalFlux(kilowatts);
-            Thrust = thrust;
-        }
-        else
-        {
-            IsThrustingField.SetValue(engine, false);
-            Thrust = Vector3d.zero;
+            InPackedUpdate = false;
         }
     }
+
     #endregion
 
     #region Buffer Handling
