@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
-using BackgroundThrust.Utils;
 using HarmonyLib;
-using PreFlightTests;
 
 namespace BackgroundThrust.Patches;
 
@@ -226,17 +224,11 @@ internal static class ModuleEngines_ThrustUpdate_Patch
             .ThrowIfInvalid("Unable to find call to Part.AddForceAtPosition")
             .Set(
                 OpCodes.Call,
-                SymbolExtensions.GetMethodInfo(() => AddForceAtPosition(null, default, default))
+                SymbolExtensions.GetMethodInfo(() =>
+                    BackgroundEngine.AddForceAtPosition(null, default, default)
+                )
             );
 
         return matcher.Instructions();
-    }
-
-    internal static void AddForceAtPosition(Part part, Vector3d force, Vector3d pos)
-    {
-        if (BackgroundEngine.InPackedUpdate)
-            BackgroundEngine.ThrustAccumulator += force;
-        else
-            part.AddForceAtPosition(force, pos);
     }
 }

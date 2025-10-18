@@ -1,18 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
-using BackgroundThrust.Patches;
-using BackgroundThrust.Utils;
 using UnityEngine;
 
 namespace BackgroundThrust;
 
 public class BackgroundEngine : PartModule
 {
-    public static bool InPackedUpdate { get; private set; }
-    public static Vector3d ThrustAccumulator = Vector3d.zero;
-
     public MultiModeEngine MultiModeEngine { get; private set; }
     public ModuleEngines Engine { get; private set; }
 
@@ -107,8 +101,22 @@ public class BackgroundEngine : PartModule
 
         // Various patches to ModuleEngines take care of changing the relevant
         // behaviour when InPackedUpdate is set to true.
-        Engine.FixedUpdate();
+        EngineFixedUpdate();
         Thrust = ThrustAccumulator;
+    }
+
+    /// <summary>
+    /// This can be overridden or patched by harmony patches to add custom
+    /// behaviour for specific module types.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// It is recommended to use a harmony patch so that it is not necessary to
+    /// use a new module type for a new engine type.
+    /// </remarks>
+    protected virtual void EngineFixedUpdate()
+    {
+        Engine.FixedUpdate();
     }
 
     protected PackedUpdateGuard GetPackedUpdateGuard()
@@ -130,6 +138,54 @@ public class BackgroundEngine : PartModule
         }
     }
 
+    #endregion
+
+    #region Packed Update Patch Helpers
+    /// <summary>
+    /// This gets set to <c>true</c> when currently running an update for a
+    /// packed engine. Use it when patching engine modules to determine whether
+    /// you should actually apply forces to the part.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// <see cref="AddForce"/> and <see cref="AddForceAtPosition"/> will handle
+    /// this for you automatically.
+    /// </remarks>
+    public static bool InPackedUpdate { get; protected set; }
+
+    /// <summary>
+    /// Recorded forces applied by the current engine.
+    /// </summary>
+    protected static Vector3d ThrustAccumulator = Vector3d.zero;
+
+    /// <summary>
+    /// Add a force to the part. This is the same as <see cref="Part.AddForce"/>
+    /// except that it will record the force if run as part of a FixedUpdate in warp.
+    /// </summary>
+    /// <param name="part"></param>
+    /// <param name="force"></param>
+    public static void AddForce(Part part, Vector3d force)
+    {
+        if (InPackedUpdate)
+            ThrustAccumulator += force;
+        else
+            part.AddForce(force);
+    }
+
+    /// <summary>
+    /// Add a force to the part. This is the same as <see cref="Part.AddForceAtPosition"/>
+    /// except that it will record the force if run as part of a FixedUpdate in warp.
+    /// </summary>
+    /// <param name="part"></param>
+    /// <param name="force"></param>
+    /// <param name="pos"></param>
+    public static void AddForceAtPosition(Part part, Vector3d force, Vector3d pos)
+    {
+        if (InPackedUpdate)
+            ThrustAccumulator += force;
+        else
+            part.AddForceAtPosition(force, pos);
+    }
     #endregion
 
     #region Buffer Handling
@@ -294,6 +350,7 @@ public class BackgroundEngine : PartModule
     }
     #endregion
 
+    #region Helpers
     private void FindModuleEngines()
     {
         MultiModeEngine = part.FindModuleImplementing<MultiModeEngine>();
@@ -309,6 +366,7 @@ public class BackgroundEngine : PartModule
             Engine = part.FindModuleImplementing<ModuleEngines>();
         }
     }
+    #endregion
 
     #region Kerbalism Shims
     // The actual code to implement this is in a different assembly. However,
