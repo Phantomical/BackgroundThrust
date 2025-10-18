@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>BackgroundThrust MechJeb2 Integration</Description>
+
+        <GenerateKSPAssemblyAttribute>true</GenerateKSPAssemblyAttribute>
+        <GenerateKSPAssemblyDependencyAttributes>true</GenerateKSPAssemblyDependencyAttributes>
+
+        <KSPBinaryType>binary</KSPBinaryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference
+            Include="$(ProjectDir)/../BackgroundThrust/BackgroundThrust.csproj">
+            <KSPAssemblyName>BackgroundThrust</KSPAssemblyName>
+            <KSPAssemblyVersion>$(Version)</KSPAssemblyVersion>
+            <Private>false</Private>
+        </ProjectReference>
+
+        <Reference Include="MechJeb2.dll">
+            <HintPath>$(DepSet1)\MechJeb2\Plugins\MechJeb2.dll</HintPath>
+            <Private>false</Private>
+            <CKANIdentifier>MechJeb2</CKANIdentifier>
+            <KSPAssemblyName>MechJeb2</KSPAssemblyName>
+            <KSPAssemblyVersion>2.5.0</KSPAssemblyVersion>
+        </Reference>
+    </ItemGroup>
+</Project>
