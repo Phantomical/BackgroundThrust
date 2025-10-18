@@ -16,14 +16,6 @@
             <Private>false</Private>
         </ProjectReference>
 
-        <Reference Include="0Harmony.dll">
-            <HintPath>$(DepSet1)\000_Harmony\0Harmony.dll</HintPath>
-            <Private>false</Private>
-            <CKANIdentifier>Harmony2</CKANIdentifier>
-            <KSPAssemblyName>HarmonyKSP</KSPAssemblyName>
-            <KSPAssemblyVersion>1.0.0</KSPAssemblyVersion>
-        </Reference>
-
         <Reference Include="BackgroundResourceProcessing.dll">
             <HintPath>$(DepSet1)\BackgroundResourceProcessing\Plugins\BackgroundResourceProcessing.dll</HintPath>
             <Private>false</Private>

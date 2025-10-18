@@ -121,7 +121,46 @@ public class BackgroundThrustVessel : VesselModule
         TargetHeading = heading;
 
         if (!ReferenceEquals(prev, heading))
+        {
+            try
+            {
+                heading?.OnInstalled();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(
+                    $"{heading?.GetType().Name ?? "null"}.OnInstalled threw an exception"
+                );
+                Debug.LogException(e);
+
+                heading = null;
+                TargetHeading = null;
+            }
+        }
+
+        if (!ReferenceEquals(prev, heading))
             Config.onHeadingChanged.Fire(new(this, prev, heading));
+    }
+
+    /// <summary>
+    /// An event that might change the target heading has occurred. Create a
+    /// new heading provider and update the current one for this vessel if
+    /// it is different from the current one.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// This method is a no-op if the vessel is not currently loaded.
+    /// </remarks>
+    public void RefreshTargetHeading() => RefreshTargetHeading(Planetarium.GetUniversalTime());
+
+    public void RefreshTargetHeading(double UT)
+    {
+        if (!Vessel.loaded)
+            return;
+
+        var heading = GetNewHeadingProvider();
+        if (TargetHeading is null || !heading.Equals(TargetHeading))
+            SetTargetHeading(heading, UT);
     }
     #endregion
 
@@ -244,6 +283,31 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
+        var target = TargetHeading.GetTargetHeading(UT);
+
+        // Protect against invalid heading vectors before they cause the vessel
+        // to get deleted because its state is NaN.
+        if (!target.IsValid())
+        {
+            var tname = TargetHeading.GetType().Name;
+            var q = target.Orientation;
+            var mag2 = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+
+            if (double.IsInfinity(mag2))
+                LogUtil.Error($"{tname}.GetTargetHeading returned infinite quaternion");
+            else if (double.IsNaN(mag2))
+                LogUtil.Error($"{tname}.GetTargetHeading returned NaN quaternion");
+            else
+                LogUtil.Error($"{tname}.GetTargetHeading returned zero quaternion");
+
+            SetThrottle(0.0);
+            SetTargetHeading(null);
+            return;
+        }
+
+        // Make sure that the vessel is pointing in the target direction.
+        RotateToOrientation(target.Orientation);
+
         var thrust = provider.GetVesselThrust(this, UT);
         var parameters = new ThrustParameters
         {
@@ -277,7 +341,7 @@ public class BackgroundThrustVessel : VesselModule
 
     #region Helpers
     // This is its own method so that it can be patched in the future if needed.
-    private void RotateToOrientation(QuaternionD target)
+    private void RotateToOrientation(Quaternion target)
     {
         vessel.SetRotation(target);
     }
@@ -352,17 +416,6 @@ public class BackgroundThrustVessel : VesselModule
         ctrlState.mainThrottle = vessel.ctrlState.mainThrottle;
     }
 
-    internal void OnVesselAutopilotModeChanged(
-        VesselAutopilot.AutopilotMode from,
-        VesselAutopilot.AutopilotMode to
-    )
-    {
-        if (from == to)
-            return;
-
-        SetTargetHeading(GetNewHeadingProvider());
-    }
-
     public override void OnLoadVessel()
     {
         DryMass = null;
@@ -392,10 +445,12 @@ public class BackgroundThrustVessel : VesselModule
 
     protected override void OnSave(ConfigNode node)
     {
+        if (vessel.loaded && TargetHeading is null)
+            RefreshTargetHeading();
+
         base.OnSave(node);
 
-        TargetHeading ??= Config.GetTargetHeading(this);
-        TargetHeading.Save(node.AddNode("TARGET_HEADING"));
+        TargetHeading?.Save(node.AddNode("TARGET_HEADING"));
 
         if (vessel?.ctrlState?.mainThrottle is float throttle)
             node.AddValue("throttle", throttle);

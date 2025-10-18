@@ -58,7 +58,7 @@ internal class EventDispatcher : MonoBehaviour
 
     void OnVesselPartCountChanged(Vessel vessel)
     {
-        var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
+        var module = vessel.GetBackgroundThrust();
 
         // Avoid proactively rescanning all vessel modules in onVesselWasModified
         // since that callback tends to be quite slow in KSP already.
@@ -69,10 +69,11 @@ internal class EventDispatcher : MonoBehaviour
         GameEvents.HostedFromToAction<Vessel, VesselAutopilot.AutopilotMode> evt
     )
     {
-        var vessel = evt.host;
-        var module = vessel.FindVesselModuleImplementing<BackgroundThrustVessel>();
+        if (!evt.host.packed || !evt.host.loaded)
+            return;
 
-        module.OnVesselAutopilotModeChanged(evt.from, evt.to);
+        var module = evt.host.GetBackgroundThrust();
+        module.RefreshTargetHeading();
     }
 
     void OnMultiModeEngineSwitchActive(MultiModeEngine engine)

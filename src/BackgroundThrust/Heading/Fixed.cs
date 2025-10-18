@@ -5,11 +5,11 @@ namespace BackgroundThrust.Heading;
 public sealed class FixedHeading() : TargetHeadingProvider
 {
     [KSPField(isPersistant = true)]
-    QuaternionD orientation;
+    Quaternion orientation;
 
-    public QuaternionD Orientation => orientation;
+    public Quaternion Orientation => orientation;
 
-    public FixedHeading(QuaternionD orientation)
+    public FixedHeading(Quaternion orientation)
         : this()
     {
         this.orientation = orientation;
@@ -19,4 +19,16 @@ public sealed class FixedHeading() : TargetHeadingProvider
         : this(transform.rotation) { }
 
     public override TargetHeading GetTargetHeading(double UT) => new(orientation);
+
+    public override bool Equals(object obj)
+    {
+        if (obj is not FixedHeading other)
+            return false;
+        if (!base.Equals(obj))
+            return false;
+
+        return other.orientation == orientation;
+    }
+
+    public override int GetHashCode() => base.GetHashCode();
 }

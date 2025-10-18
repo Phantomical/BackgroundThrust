@@ -1,6 +1,4 @@
 using System;
-using System.CodeDom;
-using System.Numerics;
 using BackgroundThrust.Utils;
 using UnityEngine;
 using static BackgroundThrust.Utils.MathUtil;
@@ -92,14 +90,39 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
         Vessel.orbit.Perturb(deltaV * heading, parameters.StopUT);
     }
 
+    /// <summary>
+    /// This is called after the heading provider is installed into the
+    /// <see cref="BackgroundThrustVessel"/>.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// This is a good place to put initialization code that needs to read
+    /// values out of a loaded vessel. There is not a guarantee that
+    /// <see cref="GetTargetHeading"/> will always be called before the vessel
+    /// is unloaded.
+    /// </remarks>
+    public virtual void OnInstalled() { }
+
     public static TargetHeadingProvider Load(Vessel vessel, ConfigNode node) =>
         Load(node, provider => provider.Vessel = vessel);
 
     internal static new void RegisterAll() =>
         DynamicallySerializable<TargetHeadingProvider>.RegisterAll();
+
+    public override bool Equals(object obj)
+    {
+        if (obj is not TargetHeadingProvider other)
+            return false;
+        if (obj.GetType() != GetType())
+            return false;
+
+        return Vessel == other.Vessel;
+    }
+
+    public override int GetHashCode() => base.GetHashCode();
 }
 
-public struct TargetHeading(QuaternionD orientation)
+public struct TargetHeading(Quaternion orientation)
 {
     public static readonly TargetHeading Invalid = default;
 
@@ -110,7 +133,7 @@ public struct TargetHeading(QuaternionD orientation)
     /// Note that the heading vector of the ship is <c>transform.up</c>, not
     /// <c>transform.forward</c>.
     /// </summary>
-    public QuaternionD Orientation = orientation;
+    public Quaternion Orientation = orientation;
 
     public TargetHeading(Transform transform)
         : this(transform.rotation) { }
@@ -122,7 +145,7 @@ public struct TargetHeading(QuaternionD orientation)
         : this(forward, vessel.ReferenceTransform?.up ?? Vector3d.up) { }
 
     public TargetHeading(Vector3d forward, Vector3d up)
-        : this(QuaternionD.LookRotation(forward, up)) { }
+        : this(Quaternion.LookRotation(forward, up)) { }
 
     public readonly bool IsValid()
     {

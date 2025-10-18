@@ -5,7 +5,7 @@ namespace BackgroundThrust.Heading;
 public class CurrentHeading() : TargetHeadingProvider
 {
     [KSPField(isPersistant = true)]
-    QuaternionD orientation;
+    Quaternion orientation;
 
     public override TargetHeading GetTargetHeading(double UT)
     {

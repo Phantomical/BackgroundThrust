@@ -18,7 +18,7 @@ public class BackgroundEngineBehaviour : ConstantConverter
     [KSPField(isPersistant = true)]
     public double MaxThrust = 0.0;
 
-    public double? Throttle = 0.0;
+    public double? Throttle = null;
 
     public BackgroundEngineBehaviour() { }
 
