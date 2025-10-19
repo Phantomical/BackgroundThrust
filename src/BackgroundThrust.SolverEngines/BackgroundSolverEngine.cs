@@ -1,6 +1,6 @@
 using SolverEngines;
 
-namespace BackgroundThrust.Integration.SolverEngines;
+namespace BackgroundThrust.SolverEngines;
 
 public class BackgroundSolverEngine : BackgroundEngine
 {

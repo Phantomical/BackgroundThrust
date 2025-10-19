@@ -5,7 +5,7 @@ using HarmonyLib;
 using RealFuels.Ullage;
 using UnityEngine;
 
-namespace BackgroundThrust.Integration.RealFuels.Patches;
+namespace BackgroundThrust.RealFuels.Patches;
 
 [HarmonyPatch(typeof(UllageModule), nameof(UllageModule.FixedUpdate))]
 internal static class UllageModule_FixedUpdate_Patch

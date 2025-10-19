@@ -1,6 +1,6 @@
 using MuMech;
 
-namespace BackgroundThrust.Integration.MechJeb2;
+namespace BackgroundThrust.MechJeb2;
 
 public class MechJebCurrentHeadingProvider : ICurrentHeadingProvider
 {

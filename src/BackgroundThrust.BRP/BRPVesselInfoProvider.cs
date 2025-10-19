@@ -1,7 +1,7 @@
 using System;
 using BackgroundResourceProcessing;
 
-namespace BackgroundThrust.Integration.BRP;
+namespace BackgroundThrust.BRP;
 
 public class BRPVesselInfoProvider : StockVesselInfoProvider
 {

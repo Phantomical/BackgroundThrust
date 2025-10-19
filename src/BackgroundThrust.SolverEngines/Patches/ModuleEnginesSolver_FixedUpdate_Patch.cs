@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using SolverEngines;
 
-namespace BackgroundThrust.Integration.SolverEngines.Patches;
+namespace BackgroundThrust.SolverEngines.Patches;
 
 [HarmonyPatch(typeof(ModuleEnginesSolver), nameof(ModuleEnginesSolver.FixedUpdate))]
 internal static class ModuleEnginesSolver_FixedUpdate_Patch

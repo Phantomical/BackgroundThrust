@@ -5,7 +5,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using KERBALISM;
 
-namespace BackgroundThrust.Integration.Kerbalism.Patches;
+namespace BackgroundThrust.Kerbalism.Patches;
 
 [HarmonyPatch(typeof(VesselResources), nameof(VesselResources.Sync))]
 internal static class VesselResources_Sync_Patch

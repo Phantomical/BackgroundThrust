@@ -29,7 +29,7 @@
       <Download>https://github.com/Phantomical/BackgroundThrust/releases/latest</Download>
     </KSPVersionFile>
 
-    <InternalsVisibleTo Include="BackgroundThrust.Integration.Kerbalism" />
+    <InternalsVisibleTo Include="BackgroundThrust.Kerbalism" />
   </ItemGroup>
 
   <!--

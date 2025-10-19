@@ -5,7 +5,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using KERBALISM;
 
-namespace BackgroundThrust.Integration.Kerbalism.Patches;
+namespace BackgroundThrust.Kerbalism.Patches;
 
 [HarmonyPatch]
 internal static class Kerbalism_Patch

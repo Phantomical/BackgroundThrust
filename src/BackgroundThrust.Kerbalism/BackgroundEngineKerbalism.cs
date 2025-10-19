@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace BackgroundThrust.Integration.Kerbalism;
+namespace BackgroundThrust.Kerbalism;
 
 internal class BackgroundEngineKerbalism
 {

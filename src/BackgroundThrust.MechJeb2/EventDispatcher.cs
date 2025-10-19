@@ -2,7 +2,7 @@ using System;
 using MuMech;
 using UnityEngine;
 
-namespace BackgroundThrust.Integration.MechJeb2;
+namespace BackgroundThrust.MechJeb2;
 
 internal static class EventDispatcher
 {

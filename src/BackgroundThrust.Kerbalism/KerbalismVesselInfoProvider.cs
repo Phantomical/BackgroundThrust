@@ -1,9 +1,9 @@
 using System;
-using BackgroundThrust.Integration.Kerbalism.Patches;
+using BackgroundThrust.Kerbalism.Patches;
 using KERBALISM;
 using KSP.Localization;
 
-namespace BackgroundThrust.Integration.Kerbalism;
+namespace BackgroundThrust.Kerbalism;
 
 using ResourceBroker = KERBALISM.ResourceBroker;
 using ResourceCache = KERBALISM.ResourceCache;

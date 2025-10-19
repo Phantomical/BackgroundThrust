@@ -7,15 +7,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust", "src\BackgroundThrust\BackgroundThrust.csproj", "{BD381523-5761-8720-4F34-80C99D5C11E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.Integration.BRP", "src\BackgroundThrust.Integration.BRP\BackgroundThrust.Integration.BRP.csproj", "{D9533CCE-7EDC-47E9-BDFD-B9321FA5275D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.BRP", "src\BackgroundThrust.BRP\BackgroundThrust.BRP.csproj", "{D9533CCE-7EDC-47E9-BDFD-B9321FA5275D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.Integration.Kerbalism", "src\BackgroundThrust.Integration.Kerbalism\BackgroundThrust.Integration.Kerbalism.csproj", "{36F4144E-C2CA-4BA7-AB8A-5338DF3605C1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.Kerbalism", "src\BackgroundThrust.Kerbalism\BackgroundThrust.Kerbalism.csproj", "{36F4144E-C2CA-4BA7-AB8A-5338DF3605C1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.Integration.MechJeb2", "src\BackgroundThrust.Integration.MechJeb2\BackgroundThrust.Integration.MechJeb2.csproj", "{4120B8DC-980B-4BAE-ABBA-2CE96D029628}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.MechJeb2", "src\BackgroundThrust.MechJeb2\BackgroundThrust.MechJeb2.csproj", "{4120B8DC-980B-4BAE-ABBA-2CE96D029628}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.Integration.SolverEngines", "src\BackgroundThrust.Integration.SolverEngines\BackgroundThrust.Integration.SolverEngines.csproj", "{92585B1F-99DE-4C96-AFB9-D5714A0EE98F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.SolverEngines", "src\BackgroundThrust.SolverEngines\BackgroundThrust.SolverEngines.csproj", "{92585B1F-99DE-4C96-AFB9-D5714A0EE98F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.Integration.RealFuels", "src\BackgroundThrust.Integration.RealFuels\BackgroundThrust.Integration.RealFuels.csproj", "{6EDD4FAB-C59C-4154-9579-FDDF823F3D8F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.RealFuels", "src\BackgroundThrust.RealFuels\BackgroundThrust.RealFuels.csproj", "{6EDD4FAB-C59C-4154-9579-FDDF823F3D8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,7 +1,7 @@
 using HarmonyLib;
 using MuMech;
 
-namespace BackgroundThrust.Integration.MechJeb2.Patches;
+namespace BackgroundThrust.MechJeb2.Patches;
 
 [HarmonyPatch(
     typeof(MechJebModuleAttitudeController),

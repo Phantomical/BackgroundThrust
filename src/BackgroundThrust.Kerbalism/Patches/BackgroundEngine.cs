@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HarmonyLib;
 
-namespace BackgroundThrust.Integration.Kerbalism.Patches;
+namespace BackgroundThrust.Kerbalism.Patches;
 
 [HarmonyPatch(typeof(BackgroundEngine), nameof(BackgroundEngine.OnSave))]
 internal static class BackgroundEngine_OnSave_Patch

@@ -3,7 +3,7 @@ using System.Reflection;
 using BackgroundResourceProcessing;
 using BackgroundResourceProcessing.Converter;
 
-namespace BackgroundThrust.Integration.BRP;
+namespace BackgroundThrust.BRP;
 
 public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
 {

@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using VehiclePhysics;
 
-namespace BackgroundThrust.Integration.BRP;
+namespace BackgroundThrust.BRP;
 
 [KSPAddon(KSPAddon.Startup.AllGameScenes, once: false)]
 public class EventDispatcher : MonoBehaviour

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using BackgroundResourceProcessing;
 using BackgroundResourceProcessing.Behaviour;
 
-namespace BackgroundThrust.Integration.BRP;
+namespace BackgroundThrust.BRP;
 
 public class BackgroundEngineBehaviour : ConstantConverter
 {

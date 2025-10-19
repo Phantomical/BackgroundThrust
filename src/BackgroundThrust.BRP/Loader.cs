@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace BackgroundThrust.Integration.BRP;
+namespace BackgroundThrust.BRP;
 
 [KSPAddon(KSPAddon.Startup.Instantly, once: true)]
 internal class Loader : MonoBehaviour

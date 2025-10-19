@@ -49,7 +49,7 @@ internal class Loader : MonoBehaviour
 
         var plugin = Path.Combine(
             GetPluginDirectory(),
-            "BackgroundThrust.Integration.Kerbalism.dll"
+            "BackgroundThrust.Kerbalism.dll"
         );
 
         AssemblyLoader.LoadedAssembly loaded;
@@ -174,7 +174,7 @@ internal class Loader : MonoBehaviour
             AssemblyName nameObject = new(a.assembly.FullName);
             string realName = nameObject.Name; // Will always return "Kerbalism" as defined in the AssemblyName property of the csproj
 
-            if (realName.Equals("BackgroundThrust.Integration.Kerbalism"))
+            if (realName.Equals("BackgroundThrust.Kerbalism"))
                 return true;
         }
 
