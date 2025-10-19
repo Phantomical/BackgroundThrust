@@ -9,6 +9,27 @@ namespace BackgroundThrust.Integration.SolverEngines.Patches;
 [HarmonyPatch(typeof(ModuleEnginesSolver), nameof(ModuleEnginesSolver.FixedUpdate))]
 internal static class ModuleEnginesSolver_FixedUpdate_Patch
 {
+    // Completely disable FixedUpdate if there is an enabled background engine
+    // and we are in time warp.
+    static bool Prefix(ModuleEnginesSolver __instance)
+    {
+        if (!HighLogic.LoadedSceneIsFlight)
+            return true;
+
+        if (BackgroundEngine.InPackedUpdate)
+            return true;
+
+        var vessel = __instance.vessel;
+        if (!vessel.packed)
+            return true;
+
+        var bgengine = __instance.part.FindModuleImplementing<BackgroundEngine>();
+        if (!bgengine.IsEnabled)
+            return true;
+
+        return false;
+    }
+
     static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
         var addForceAtPositionMethod = SymbolExtensions.GetMethodInfo(

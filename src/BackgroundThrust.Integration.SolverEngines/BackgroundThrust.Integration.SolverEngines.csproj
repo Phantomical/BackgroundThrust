@@ -29,7 +29,7 @@
             <Private>false</Private>
             <CKANIdentifier>SolverEngines</CKANIdentifier>
             <KSPAssemblyName>SolverEngines</KSPAssemblyName>
-            <KSPAssemblyVersion>3.14.0</KSPAssemblyVersion>
+            <KSPAssemblyVersion>3.13.0</KSPAssemblyVersion>
         </Reference>
     </ItemGroup>
 </Project>

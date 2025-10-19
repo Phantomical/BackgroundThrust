@@ -368,6 +368,14 @@ public class BackgroundEngine : PartModule
     }
     #endregion
 
+    #region Save & Load
+    // The kerbalism integration patches this, so it needs to stay.
+    public override void OnSave(ConfigNode node)
+    {
+        base.OnSave(node);
+    }
+    #endregion
+
     #region Kerbalism Shims
     // The actual code to implement this is in a different assembly. However,
     // we provide it here so that it can be harmony patched.
