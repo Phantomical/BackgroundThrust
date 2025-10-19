@@ -42,10 +42,11 @@ public class BackgroundEngine : PartModule
         FindModuleEngines();
 
         GameEvents.onTimeWarpRateChanged.Add(OnTimeWarpRateChanged);
+        GameEvents.onVesselGoOnRails.Add(OnVesselGoOnRails);
         GameEvents.onVesselGoOffRails.Add(OnVesselGoOffRails);
     }
 
-    void OnDestroy()
+    protected virtual void OnDestroy()
     {
         GameEvents.onTimeWarpRateChanged.Remove(OnTimeWarpRateChanged);
         GameEvents.onVesselGoOffRails.Remove(OnVesselGoOffRails);
@@ -70,11 +71,26 @@ public class BackgroundEngine : PartModule
             UpdateBuffers();
     }
 
-    protected virtual void OnVesselGoOffRails(Vessel vessel)
+    void OnVesselGoOnRails(Vessel vessel)
     {
         if (vessel != this.vessel)
             return;
 
+        OnGoOnRails();
+    }
+
+    void OnVesselGoOffRails(Vessel vessel)
+    {
+        if (vessel != this.vessel)
+            return;
+
+        OnGoOffRails();
+    }
+
+    protected virtual void OnGoOnRails() { }
+
+    protected virtual void OnGoOffRails()
+    {
         ClearBuffers();
     }
     #endregion

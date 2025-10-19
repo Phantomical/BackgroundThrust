@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <Description>BackgroundThrust SolverEngines Integration</Description>
+        <Description>BackgroundThrust RealFuels Integration</Description>
 
         <GenerateKSPAssemblyAttribute>true</GenerateKSPAssemblyAttribute>
         <GenerateKSPAssemblyDependencyAttributes>true</GenerateKSPAssemblyDependencyAttributes>
@@ -24,11 +24,11 @@
             <KSPAssemblyVersion>1.0.0</KSPAssemblyVersion>
         </Reference>
 
-        <Reference Include="SolverEngines.dll">
-            <HintPath>$(DepSet1)\SolverEngines\Plugins\SolverEngines.dll</HintPath>
+        <Reference Include="RealFuels.dll">
+            <HintPath>$(DepSet1)\RealFuels\Plugins\RealFuels.dll</HintPath>
             <Private>false</Private>
-            <CKANIdentifier>SolverEngines</CKANIdentifier>
-            <KSPAssemblyName>SolverEngines</KSPAssemblyName>
+            <CKANIdentifier>RealFuels</CKANIdentifier>
+            <KSPAssemblyName>RealFuels</KSPAssemblyName>
             <KSPAssemblyVersion>3.13.0</KSPAssemblyVersion>
         </Reference>
     </ItemGroup>

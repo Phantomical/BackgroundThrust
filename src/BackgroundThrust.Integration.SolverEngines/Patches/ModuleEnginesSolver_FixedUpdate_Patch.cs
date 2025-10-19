@@ -19,15 +19,21 @@ internal static class ModuleEnginesSolver_FixedUpdate_Patch
         if (BackgroundEngine.InPackedUpdate)
             return true;
 
-        var vessel = __instance.vessel;
-        if (!vessel.packed)
+        var part = __instance.part;
+        if (!IsTimeWarping(part))
             return true;
 
-        var bgengine = __instance.part.FindModuleImplementing<BackgroundEngine>();
+        var bgengine = part.FindModuleImplementing<BackgroundEngine>();
         if (!bgengine.IsEnabled)
             return true;
 
         return false;
+    }
+
+    static bool IsTimeWarping(Part part)
+    {
+        return part.packed
+            || (TimeWarp.CurrentRate > 1f && TimeWarp.WarpMode == TimeWarp.Modes.HIGH);
     }
 
     static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
