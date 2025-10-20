@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>BackgroundThrust RealFuels Integration</Description>
+
+        <GenerateKSPAssemblyAttribute>true</GenerateKSPAssemblyAttribute>
+        <GenerateKSPAssemblyDependencyAttributes>true</GenerateKSPAssemblyDependencyAttributes>
+
+        <KSPBinaryType>binary</KSPBinaryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference
+            Include="$(ProjectDir)/../BackgroundThrust/BackgroundThrust.csproj">
+            <KSPAssemblyName>BackgroundThrust</KSPAssemblyName>
+            <KSPAssemblyVersion>$(Version)</KSPAssemblyVersion>
+            <Private>false</Private>
+        </ProjectReference>
+
+        <Reference Include="RealismOverhaul.dll">
+            <HintPath>$(DepSet1)\RealismOverhaul\Plugins\RealismOverhaul.dll</HintPath>
+            <Private>false</Private>
+            <CKANIdentifier>RealismOverhaul</CKANIdentifier>
+            <KSPAssemblyName>RealismOverhaul</KSPAssemblyName>
+            <KSPAssemblyVersion>17.22.0</KSPAssemblyVersion>
+        </Reference>
+    </ItemGroup>
+</Project>
