@@ -18,7 +18,7 @@ internal static class VesselAutopilot_SetMode_Patch
         if (from == to)
             return;
 
-        Config.onAutopilotModeChange.Fire(
+        Config.OnAutopilotModeChange.Fire(
             new GameEvents.HostedFromToAction<Vessel, VesselAutopilot.AutopilotMode>(
                 __instance.Vessel,
                 from,

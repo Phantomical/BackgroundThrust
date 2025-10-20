@@ -100,7 +100,7 @@ public class BackgroundThrustVessel : VesselModule
             this.throttle = throttle;
 
             if (!vessel.loaded && prev != throttle)
-                Config.onBackgroundThrottleChanged.Fire(new(this, prev, throttle));
+                Config.OnBackgroundThrottleChanged.Fire(new(this, prev, throttle));
         }
     }
 
@@ -139,7 +139,7 @@ public class BackgroundThrustVessel : VesselModule
         }
 
         if (!ReferenceEquals(prev, heading))
-            Config.onHeadingChanged.Fire(new(this, prev, heading));
+            Config.OnTargetHeadingProviderChanged.Fire(new(this, prev, heading));
     }
 
     /// <summary>
@@ -228,6 +228,7 @@ public class BackgroundThrustVessel : VesselModule
 
         // Make sure that the vessel is pointing in the target direction.
         RotateToOrientation(target.Orientation);
+        Config.OnTargetHeadingUpdate.Fire(this, target.Orientation);
 
         var parameters = new ThrustParameters
         {
@@ -307,6 +308,7 @@ public class BackgroundThrustVessel : VesselModule
 
         // Make sure that the vessel is pointing in the target direction.
         RotateToOrientation(target.Orientation);
+        Config.OnBackgroundTargetHeadingUpdate.Fire(this, target.Orientation);
 
         var thrust = provider.GetVesselThrust(this, UT);
         var parameters = new ThrustParameters

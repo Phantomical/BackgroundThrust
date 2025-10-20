@@ -74,20 +74,14 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
     /// </remarks>
     public virtual void IntegrateThrust(BackgroundThrustVessel module, ThrustParameters parameters)
     {
-        var heading = module.Heading;
-
-        var deltaV = parameters.ComputeDeltaV();
-        if (!IsFinite(deltaV))
+        var deltaV = parameters.ComputeDeltaVV();
+        if (!IsFinite(deltaV.sqrMagnitude))
         {
             LogUtil.Error("deltaV was infinite or NaN");
             return;
         }
 
-        var mag2 = heading.sqrMagnitude;
-        if (mag2 == 0.0 || !IsFinite(mag2))
-            return;
-
-        Vessel.orbit.Perturb(deltaV * heading, parameters.StopUT);
+        Vessel.orbit.Perturb(deltaV, parameters.StopUT);
     }
 
     /// <summary>

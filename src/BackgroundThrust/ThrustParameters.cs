@@ -43,15 +43,20 @@ public struct ThrustParameters
     public readonly double DeltaT => StopUT - StartUT;
     public readonly double DeltaM => StopMass - StartMass;
 
-    public readonly double ComputeDeltaV()
+    /// <summary>
+    /// Get the vector change in velocity due to vessel thrust.
+    /// </summary>
+    /// <returns></returns>
+    public readonly Vector3d ComputeDeltaVV()
     {
-        var thrust = Thrust.magnitude;
         var deltaM = DeltaM;
         if (Math.Abs(deltaM) < 1e-6)
-            return thrust / StopMass * DeltaT;
+            return Thrust * (DeltaT / StopMass);
 
-        return thrust / deltaM * Math.Log(StopMass / StartMass) * DeltaT;
+        return Thrust * (DeltaT / deltaM * Math.Log(StopMass / StartMass));
     }
+
+    public readonly double ComputeDeltaV() => ComputeDeltaVV().magnitude;
 
     /// <summary>
     /// Assuming that the thrust and mass consumption rate remains constant,

@@ -33,22 +33,17 @@ public class Maneuver : TargetHeadingProvider
 
     public override void IntegrateThrust(BackgroundThrustVessel module, ThrustParameters parameters)
     {
-        var heading = module.Heading;
-        var deltaV = parameters.ComputeDeltaV();
-        if (!IsFinite(deltaV))
+        var deltaV = parameters.ComputeDeltaVV();
+        if (!IsFinite(deltaV.sqrMagnitude))
         {
             LogUtil.Error("deltaV was infinite or NaN");
             return;
         }
 
-        var mag2 = heading.sqrMagnitude;
-        if (mag2 == 0.0 || !IsFinite(mag2))
-            return;
-
         var node = Node;
         var startDeltaV = node.GetBurnVector(Vessel.orbit);
 
-        Vessel.orbit.Perturb(heading * deltaV, parameters.StopUT);
+        Vessel.orbit.Perturb(deltaV, parameters.StopUT);
 
         var endDeltaV = node.GetBurnVector(Vessel.orbit);
 
@@ -61,7 +56,7 @@ public class Maneuver : TargetHeadingProvider
                 return;
 
             var remaining = endDeltaV.magnitude;
-            var estimateUT = parameters.GetUTAtDeltaV(deltaV + remaining);
+            var estimateUT = parameters.GetUTAtDeltaV(deltaV.magnitude + remaining);
             var remainingT = Math.Max(estimateUT - parameters.StartUT, 0.0);
 
             SetTargetWarpRate(remainingT);

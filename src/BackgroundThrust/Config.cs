@@ -1,29 +1,46 @@
 using System.Collections.Generic;
 using BackgroundThrust.Heading;
+using UnityEngine;
 using static GameEvents;
 
 namespace BackgroundThrust;
 
 public static class Config
 {
-    public static readonly EventData<
+    public static EventData<
         HostedFromToAction<Vessel, VesselAutopilot.AutopilotMode>
-    > onAutopilotModeChange = new("onAutopilotModeChange");
+    > OnAutopilotModeChange { get; } = new("onAutopilotModeChange");
 
     /// <summary>
     /// This event is emitted when the throttle is changed on the vessel.
     /// </summary>
-    public static readonly EventData<
+    public static EventData<
         HostedFromToAction<BackgroundThrustVessel, double>
-    > onBackgroundThrottleChanged = new("onBackgroundThrottleChanged");
+    > OnBackgroundThrottleChanged { get; } = new("onBackgroundThrottleChanged");
 
     /// <summary>
     /// This event is emitted when the target heading provider on the vessel
     /// changes.
     /// </summary>
-    public static readonly EventData<
+    public static EventData<
         HostedFromToAction<BackgroundThrustVessel, TargetHeadingProvider>
-    > onHeadingChanged = new("onBackgroundHeadingChanged");
+    > OnTargetHeadingProviderChanged { get; } = new("onTargetHeadingProviderChanged");
+
+    /// <summary>
+    /// This event is emitted whenever the target heading is updated for a
+    /// loaded vessel in timewarp.
+    /// </summary>
+    public static EventData<BackgroundThrustVessel, Quaternion> OnTargetHeadingUpdate { get; } =
+        new("onTargetHeadingUpdate");
+
+    /// <summary>
+    /// This event is emitted whenever the target heading for a vessel in the
+    /// background is updated.
+    /// </summary>
+    public static EventData<
+        BackgroundThrustVessel,
+        Quaternion
+    > OnBackgroundTargetHeadingUpdate { get; } = new("onLoadedTargetHeadingUpdate");
 
     /// <summary>
     /// This controls how <see cref="BackgroundThrustVessel"/> determines the

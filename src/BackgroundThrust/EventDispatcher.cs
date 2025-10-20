@@ -41,7 +41,7 @@ internal class EventDispatcher : MonoBehaviour
         GameEvents.onVesselPartCountChanged.Add(OnVesselPartCountChanged);
         GameEvents.onMultiModeEngineSwitchActive.Add(OnMultiModeEngineSwitchActive);
         GameEvents.onVesselDestroy.Add(OnVesselDestroy);
-        Config.onAutopilotModeChange.Add(OnVesselAutopilotModeChanged);
+        Config.OnAutopilotModeChange.Add(OnVesselAutopilotModeChanged);
 
         Instance = this;
     }
@@ -53,7 +53,7 @@ internal class EventDispatcher : MonoBehaviour
         GameEvents.onVesselWasModified.Remove(OnVesselPartCountChanged);
         GameEvents.onMultiModeEngineSwitchActive.Remove(OnMultiModeEngineSwitchActive);
         GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
-        Config.onAutopilotModeChange.Remove(OnVesselAutopilotModeChanged);
+        Config.OnAutopilotModeChange.Remove(OnVesselAutopilotModeChanged);
     }
 
     void OnVesselPartCountChanged(Vessel vessel)
