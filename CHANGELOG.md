@@ -11,6 +11,9 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+### Fixed
+* Fixed a bug where SAS mode orientations were being incorrectly calculated.
+
 ## 0.2.0
 ### Added
 * Added ability to use all MechJeb smart ASS modes in warp.

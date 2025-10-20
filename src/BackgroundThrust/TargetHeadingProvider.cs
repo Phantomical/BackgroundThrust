@@ -81,7 +81,22 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
             return;
         }
 
+        var start = GetTargetHeading(parameters.StopUT).Orientation;
         Vessel.orbit.Perturb(deltaV, parameters.StopUT);
+        var end = GetTargetHeading(parameters.StopUT).Orientation;
+
+        var v1 = start * Vector3d.forward;
+        var v2 = end * Vector3d.forward;
+
+        if (Vector3d.Dot(v1, v2) < 0)
+        {
+            // When we get stuck near a singularity it pretty quickly progresses
+            // to getting a NaN orbit, which will get the vessel deleted.
+            //
+            // To prevent this we remove the heading provider if the target
+            // heading changes by more than 180 degrees after applying the impulse.
+            module.SetTargetHeading(null);
+        }
     }
 
     /// <summary>
@@ -116,7 +131,7 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
     public override int GetHashCode() => base.GetHashCode();
 }
 
-public struct TargetHeading(Quaternion orientation)
+public struct TargetHeading
 {
     public static readonly TargetHeading Invalid = default;
 
@@ -127,19 +142,28 @@ public struct TargetHeading(Quaternion orientation)
     /// Note that the heading vector of the ship is <c>transform.up</c>, not
     /// <c>transform.forward</c>.
     /// </summary>
-    public Quaternion Orientation = orientation;
+    public Quaternion Orientation;
+
+    /// <summary>
+    /// Creates a target heading rotated so that <c>transform.forwards</c>
+    /// points towards a specific orientation. Note that <c>transform.up</c>
+    /// is (usually) the thrust vector so this orientation does not necessarily
+    /// correspond to directly using <see cref="Quaternion.LookRotation(Vector3)"/>.
+    /// </summary>
+    /// <param name="orientation"></param>
+    public TargetHeading(Quaternion orientation)
+    {
+        Orientation = orientation;
+    }
 
     public TargetHeading(Transform transform)
         : this(transform.rotation) { }
 
-    public TargetHeading(Vector3d forward)
-        : this(forward, Vector3d.up) { }
-
-    public TargetHeading(Vector3d forward, Vessel vessel)
-        : this(forward, vessel.ReferenceTransform?.up ?? Vector3d.up) { }
-
-    public TargetHeading(Vector3d forward, Vector3d up)
-        : this(Quaternion.LookRotation(forward, up)) { }
+    public static TargetHeading PointAt(Vessel vessel, Vector3d heading)
+    {
+        var delta = Quaternion.FromToRotation(vessel.ReferenceTransform.up, heading);
+        return new(delta * vessel.ReferenceTransform.rotation);
+    }
 
     public readonly bool IsValid()
     {

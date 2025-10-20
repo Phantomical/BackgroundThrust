@@ -30,7 +30,7 @@ public class Target : TargetBase
         if (GetTargetDirection(UT) is not Vector3d target)
             return default;
 
-        return new(target, Vessel);
+        return TargetHeading.PointAt(Vessel, target);
     }
 }
 
@@ -42,7 +42,7 @@ public class AntiTarget : Target
     {
         if (GetTargetDirection(UT) is not Vector3d target)
             return default;
-        return new(-target, Vessel);
+        return TargetHeading.PointAt(Vessel, -target);
     }
 }
 
@@ -67,7 +67,7 @@ public class TargetPrograde : TargetBase
         if (GetRelVelocityDirection(UT) is not Vector3d heading)
             return default;
 
-        return new(heading, Vessel);
+        return TargetHeading.PointAt(Vessel, heading);
     }
 }
 
@@ -80,6 +80,6 @@ public class TargetRetrograde : TargetPrograde
         if (GetRelVelocityDirection(UT) is not Vector3d heading)
             return default;
 
-        return new(-heading, Vessel);
+        return TargetHeading.PointAt(Vessel, -heading);
     }
 }

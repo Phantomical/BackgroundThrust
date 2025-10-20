@@ -196,6 +196,7 @@ public class BackgroundThrustVessel : VesselModule
             SetTargetHeading(GetFixedHeading());
 
         var target = TargetHeading.GetTargetHeading(now);
+        target.Orientation = ToVesselOrientation(target.Orientation);
 
         // Protect against invalid heading vectors before they cause the vessel
         // to get deleted because its state is NaN.
@@ -285,6 +286,7 @@ public class BackgroundThrustVessel : VesselModule
         }
 
         var target = TargetHeading.GetTargetHeading(UT);
+        target.Orientation = ToVesselOrientation(target.Orientation);
 
         // Protect against invalid heading vectors before they cause the vessel
         // to get deleted because its state is NaN.
@@ -342,6 +344,23 @@ public class BackgroundThrustVessel : VesselModule
     #endregion
 
     #region Helpers
+    static readonly Quaternion XzyRot = new Matrix4x4(
+        new Vector4(1, 0, 0, 0),
+        new Vector4(0, 0, 1, 0),
+        new Vector4(0, 1, 0, 0),
+        Vector4.zero
+    ).rotation;
+
+    private Quaternion ToVesselOrientation(Quaternion orientation)
+    {
+        // KSP has transform.forward as the forward direction but we want to
+        // orient the vessel relative to transform.up. As such, we need to
+        // rotate the orientation to match.
+
+        // var rot = Quaternion.FromToRotation(transform.up, transform.forward);
+        return orientation;
+    }
+
     // This is its own method so that it can be patched in the future if needed.
     private void RotateToOrientation(Quaternion target)
     {

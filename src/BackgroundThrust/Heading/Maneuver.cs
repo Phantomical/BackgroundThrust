@@ -28,7 +28,7 @@ public class Maneuver : TargetHeadingProvider
             return default;
 
         var vec = node.GetBurnVector(Vessel.orbit).normalized;
-        return new(vec, Vessel);
+        return TargetHeading.PointAt(Vessel, vec);
     }
 
     public override void IntegrateThrust(BackgroundThrustVessel module, ThrustParameters parameters)
