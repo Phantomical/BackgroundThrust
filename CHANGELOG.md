@@ -11,6 +11,16 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.3.0
+### Added
+* Added a new module for any engine using SolverEngines.
+* Added support for using RealFuels engines with BackgroundThrust.
+* Added support for RealismOverhaul persistent rotation.
+
+### Changed
+* Integration DLLs have been renamed to remove `.Integration` from their names.
+* Thrust in warp now literally just runs the engine module `FixedUpdate` method.
+
 ### Fixed
 * Fixed a bug where SAS mode orientations were being incorrectly calculated.
 
