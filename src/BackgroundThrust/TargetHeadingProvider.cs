@@ -68,35 +68,12 @@ public abstract class TargetHeadingProvider : DynamicallySerializable<TargetHead
     /// </para>
     ///
     /// <para>
-    /// The default implementation effectively applies all the thrust at the
-    /// current UT.
+    /// The default implementation just calls <see cref="OrbitMath.IntegrateThrust"/>.
     /// </para>
     /// </remarks>
     public virtual void IntegrateThrust(BackgroundThrustVessel module, ThrustParameters parameters)
     {
-        var deltaV = parameters.ComputeDeltaVV();
-        if (!IsFinite(deltaV.sqrMagnitude))
-        {
-            LogUtil.Error("deltaV was infinite or NaN");
-            return;
-        }
-
-        var start = GetTargetHeading(parameters.StopUT).Orientation;
-        Vessel.orbit.Perturb(deltaV, parameters.StopUT);
-        var end = GetTargetHeading(parameters.StopUT).Orientation;
-
-        var v1 = start * Vector3d.forward;
-        var v2 = end * Vector3d.forward;
-
-        if (Vector3d.Dot(v1, v2) < 0)
-        {
-            // When we get stuck near a singularity it pretty quickly progresses
-            // to getting a NaN orbit, which will get the vessel deleted.
-            //
-            // To prevent this we remove the heading provider if the target
-            // heading changes by more than 180 degrees after applying the impulse.
-            module.SetTargetHeading(null);
-        }
+        OrbitMath.IntegrateThrust(module, parameters);
     }
 
     /// <summary>

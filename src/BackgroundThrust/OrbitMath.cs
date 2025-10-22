@@ -1,3 +1,5 @@
+using BackgroundThrust.Utils;
+
 namespace BackgroundThrust;
 
 /// <summary>
@@ -25,7 +27,7 @@ public static class OrbitMath
     /// <summary>
     /// Perturbs an orbit by a <paramref name="deltaV"/> vector.
     /// </summary>
-    internal static void Perturb(this Orbit orbit, Vector3d deltaV, double UT)
+    public static void Perturb(this Orbit orbit, Vector3d deltaV, double UT)
     {
         if (deltaV.sqrMagnitude == 0.0)
             return;
@@ -42,5 +44,18 @@ public static class OrbitMath
         );
         orbit.Init();
         orbit.UpdateFromUT(UT);
+    }
+
+    public static void IntegrateThrust(BackgroundThrustVessel module, ThrustParameters parameters)
+    {
+        var deltaV = parameters.ComputeDeltaVV();
+        if (!MathUtil.IsFinite(deltaV.sqrMagnitude))
+        {
+            LogUtil.Error("deltaV was infinite or NaN");
+            return;
+        }
+
+        var vessel = module.Vessel;
+        vessel.orbit.Perturb(deltaV, parameters.StopUT);
     }
 }

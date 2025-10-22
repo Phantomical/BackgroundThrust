@@ -1,3 +1,5 @@
+using static Vessel;
+
 namespace BackgroundThrust;
 
 public static class VesselExt
@@ -14,5 +16,16 @@ public static class VesselExt
             return EventDispatcher.Instance.GetVesselModule(v);
 
         return v.FindVesselModuleImplementing<BackgroundThrustVessel>();
+    }
+
+    internal static bool IsOrbiting(this Vessel vessel)
+    {
+        return vessel.situation switch
+        {
+            Situations.ORBITING => true,
+            Situations.ESCAPING => true,
+            Situations.SUB_ORBITAL => true,
+            _ => false,
+        };
     }
 }

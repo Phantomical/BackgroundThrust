@@ -92,8 +92,8 @@ public class EventDispatcher : MonoBehaviour
     void OnDestroy()
     {
         BackgroundResourceProcessor.onVesselChangepoint.Remove(OnVesselChangepoint);
-        Config.OnBackgroundThrottleChanged.Add(OnBackgroundThrottleChanged);
-        Config.OnTargetHeadingProviderChanged.Add(OnHeadingChanged);
+        Config.OnBackgroundThrottleChanged.Remove(OnBackgroundThrottleChanged);
+        Config.OnTargetHeadingProviderChanged.Remove(OnHeadingChanged);
         GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
 
         Instance = null;

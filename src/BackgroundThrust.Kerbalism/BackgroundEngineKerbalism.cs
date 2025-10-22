@@ -34,6 +34,10 @@ internal class BackgroundEngineKerbalism
         var engine = module.Engine;
         if (engine is null)
             return;
+        if (!module.IsEnabled || !module.AllowBackgroundProcessing)
+            return;
+        if (!BackgroundThrustVessel.IsThrustPermitted(module.vessel))
+            return;
 
         if (module.Engine.independentThrottle)
             node.AddValue("Throttle", engine.independentThrottlePercentage * 0.01);
@@ -89,9 +93,12 @@ internal class BackgroundEngineKerbalism
         double throttle = module.Throttle;
         node.TryGetValue("Throttle", ref throttle);
         if (throttle == 0.0)
-            return "bt-engine";
+            return KerbalismToolTipName;
 
-        double thrust = node.GetDouble("Thrust");
+        double thrust = 0.0;
+        if (!node.TryGetValue("Thrust", ref thrust))
+            return KerbalismToolTipName;
+
         resourceChangeRequest.Add(
             new(KerbalismVesselInfoProvider.ThrustResourceName, thrust * throttle)
         );

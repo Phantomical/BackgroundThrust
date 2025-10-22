@@ -1,13 +1,11 @@
 namespace BackgroundThrust;
 
+/// <summary>
+/// An interface to provide information about a vessel in the background.
+/// It is only called for unloaded vessels.
+/// </summary>
 public abstract class VesselInfoProvider
 {
-    /// <summary>
-    /// Whether this info provider works in the background. If <c>false</c>
-    /// then the vessel will not allow thrust in the background.
-    /// </summary>
-    public abstract bool AllowBackground { get; }
-
     /// <summary>
     /// Whether the <see cref="BackgroundThrust"/> module should disable itself
     /// if <see cref="GetVesselThrust"/> returns 0.
@@ -17,7 +15,7 @@ public abstract class VesselInfoProvider
     /// This is generally more efficient but may not be compatible with all
     /// background processing implementations.
     /// </remarks>
-    public virtual bool DisableOnZeroThrustInBackground => true;
+    public virtual bool DisableOnZeroThrust => true;
 
     /// <summary>
     /// Get the current mass of the vessel.
@@ -55,20 +53,4 @@ public abstract class VesselInfoProvider
     /// </para>
     /// </remarks>
     public abstract Vector3d GetVesselThrust(BackgroundThrustVessel module, double UT);
-}
-
-public class StockVesselInfoProvider : VesselInfoProvider
-{
-    public override bool AllowBackground => false;
-
-    public override double GetVesselMass(BackgroundThrustVessel module, double UT) =>
-        module.Vessel.totalMass;
-
-    public override Vector3d GetVesselThrust(BackgroundThrustVessel module, double UT)
-    {
-        Vector3d thrust = Vector3d.zero;
-        foreach (var engine in module.Engines)
-            thrust += engine.Thrust;
-        return thrust;
-    }
 }

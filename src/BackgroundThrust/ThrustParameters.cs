@@ -52,6 +52,8 @@ public struct ThrustParameters
         var deltaM = DeltaM;
         if (Math.Abs(deltaM) < 1e-6)
             return Thrust * (DeltaT / StopMass);
+        if (StartMass == 0 || StopMass == 0)
+            return Thrust * (DeltaT / Math.Max(StartMass, StopMass));
 
         return Thrust * (DeltaT / deltaM * Math.Log(StopMass / StartMass));
     }

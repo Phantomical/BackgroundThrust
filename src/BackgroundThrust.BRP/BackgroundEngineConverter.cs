@@ -14,11 +14,13 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
 
     public override ModuleBehaviour GetBehaviour(BackgroundEngine module)
     {
-        if (!module.IsEnabled)
+        if (Config.VesselInfoProvider is not BRPVesselInfoProvider)
+            return null;
+        if (!module.IsEnabled || !module.AllowBackgroundProcessing)
             return null;
         if (module.Engine is null)
             return null;
-        if (Config.VesselInfoProvider is not BRPVesselInfoProvider)
+        if (!BackgroundThrustVessel.IsThrustPermitted(module.vessel))
             return null;
 
         var engine = module.Engine;

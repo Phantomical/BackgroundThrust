@@ -48,7 +48,7 @@ public static class Config
     /// that adds custom resource handling or background processing then this
     /// is how you integrate that.
     /// </summary>
-    public static VesselInfoProvider VesselInfoProvider = new StockVesselInfoProvider();
+    public static VesselInfoProvider VesselInfoProvider { get; set; } = null;
 
     /// <summary>
     /// An extra multiplier on the buffer capacity for persistent engines.

@@ -28,6 +28,9 @@ public class BackgroundEngine : PartModule
     public bool IsEnabled = true;
 
     [KSPField]
+    public bool AllowBackgroundProcessing = true;
+
+    [KSPField]
     private double RequiredEC = 0.0;
 
     #region Event Handlers
@@ -92,115 +95,6 @@ public class BackgroundEngine : PartModule
     protected virtual void OnGoOffRails()
     {
         ClearBuffers();
-    }
-    #endregion
-
-    #region Packed Update
-    public virtual void PackedEngineUpdate()
-    {
-        if (Engine is null)
-        {
-            Thrust = Vector3d.zero;
-            return;
-        }
-
-        if (!IsEnabled)
-        {
-            Thrust = Vector3d.zero;
-            Engine.finalThrust = 0f;
-            Engine.DeactivateLoopingFX();
-            ClearBuffers();
-            return;
-        }
-
-        using var guard = GetPackedUpdateGuard();
-
-        // Various patches to ModuleEngines take care of changing the relevant
-        // behaviour when InPackedUpdate is set to true.
-        EngineFixedUpdate();
-        Thrust = ThrustAccumulator;
-    }
-
-    /// <summary>
-    /// This can be overridden or patched by harmony patches to add custom
-    /// behaviour for specific module types.
-    /// </summary>
-    ///
-    /// <remarks>
-    /// It is recommended to use a harmony patch so that it is not necessary to
-    /// use a new module type for a new engine type.
-    /// </remarks>
-    protected virtual void EngineFixedUpdate()
-    {
-        Engine.FixedUpdate();
-    }
-
-    protected PackedUpdateGuard GetPackedUpdateGuard()
-    {
-        ThrustAccumulator = Vector3d.zero;
-        return new();
-    }
-
-    protected readonly struct PackedUpdateGuard : IDisposable
-    {
-        public PackedUpdateGuard()
-        {
-            InPackedUpdate = true;
-        }
-
-        public void Dispose()
-        {
-            InPackedUpdate = false;
-        }
-    }
-
-    #endregion
-
-    #region Packed Update Patch Helpers
-    /// <summary>
-    /// This gets set to <c>true</c> when currently running an update for a
-    /// packed engine. Use it when patching engine modules to determine whether
-    /// you should actually apply forces to the part.
-    /// </summary>
-    ///
-    /// <remarks>
-    /// <see cref="AddForce"/> and <see cref="AddForceAtPosition"/> will handle
-    /// this for you automatically.
-    /// </remarks>
-    public static bool InPackedUpdate { get; protected set; }
-
-    /// <summary>
-    /// Recorded forces applied by the current engine.
-    /// </summary>
-    protected static Vector3d ThrustAccumulator = Vector3d.zero;
-
-    /// <summary>
-    /// Add a force to the part. This is the same as <see cref="Part.AddForce"/>
-    /// except that it will record the force if run as part of a FixedUpdate in warp.
-    /// </summary>
-    /// <param name="part"></param>
-    /// <param name="force"></param>
-    public static void AddForce(Part part, Vector3d force)
-    {
-        if (InPackedUpdate)
-            ThrustAccumulator += force;
-        else
-            part.AddForce(force);
-    }
-
-    /// <summary>
-    /// Add a force to the part. This is the same as <see cref="Part.AddForceAtPosition"/>
-    /// except that it will record the force if run as part of a FixedUpdate in warp.
-    /// </summary>
-    /// <param name="part"></param>
-    /// <param name="force"></param>
-    /// <param name="pos"></param>
-    public static void AddForceAtPosition(Part part, Vector3d force, Vector3d pos)
-    {
-        if (InPackedUpdate)
-            ThrustAccumulator += force;
-        else
-            part.AddForceAtPosition(force, pos);
     }
     #endregion
 

@@ -78,8 +78,8 @@ public class SmartASS : TargetHeadingProvider
         var module = Vessel.GetBackgroundThrust();
         var transform = Vessel.ReferenceTransform;
         ManeuverNode node;
-        Vector3d fwd;
-        Vector3d up;
+        Vector3 fwd;
+        Vector3 up;
 
         Vector3d vesselUp = (Vessel.CoMD - Vessel.mainBody.position).normalized;
         Vector3d vesselFwd = transform.up;
@@ -121,7 +121,7 @@ public class SmartASS : TargetHeadingProvider
                 fwd = (Target.GetTransform().position - Vessel.GetTransform().position).normalized;
                 up = Vector3d.Cross(fwd, GetOrbitNormal());
 
-                Vector3d.OrthoNormalize(ref fwd, ref up);
+                Vector3.OrthoNormalize(ref fwd, ref up);
                 return Quaternion.LookRotation(fwd, up);
 
             case AttitudeReference.RELATIVE_VELOCITY:
@@ -131,7 +131,7 @@ public class SmartASS : TargetHeadingProvider
                 fwd = (Target.GetObtVelocity() - Vessel.GetObtVelocity()).normalized;
                 up = Vector3d.Cross(fwd, GetOrbitNormal());
 
-                Vector3d.OrthoNormalize(ref fwd, ref up);
+                Vector3.OrthoNormalize(ref fwd, ref up);
                 return Quaternion.LookRotation(fwd, up);
 
             case AttitudeReference.TARGET_ORIENTATION:
@@ -152,7 +152,7 @@ public class SmartASS : TargetHeadingProvider
                 fwd = node.GetBurnVector(Vessel.orbit);
                 up = Vector3d.Cross(fwd, GetOrbitNormal());
 
-                Vector3d.OrthoNormalize(ref fwd, ref up);
+                Vector3.OrthoNormalize(ref fwd, ref up);
                 return Quaternion.LookRotation(fwd, up);
 
             case AttitudeReference.MANEUVER_NODE_COT:
@@ -163,7 +163,7 @@ public class SmartASS : TargetHeadingProvider
                 fwd = node.GetBurnVector(Vessel.orbit);
                 up = Vector3d.Cross(fwd, GetOrbitNormal());
 
-                Vector3d.OrthoNormalize(ref fwd, ref up);
+                Vector3.OrthoNormalize(ref fwd, ref up);
                 return Quaternion.LookRotation(thrust, vesselFwd)
                     * Quaternion.LookRotation(fwd, up);
 

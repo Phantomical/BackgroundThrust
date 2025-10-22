@@ -21,6 +21,13 @@ public class BackgroundThrustVessel : VesselModule
     [KSPField(isPersistant = true)]
     public double LastUpdateMass = 0.0;
 
+    /// <summary>
+    /// The last target heading that was held by this vessel. Note that this
+    /// may be invalid (<c>default</c>) under some conditions. Always check
+    /// before attempting to use it.
+    /// </summary>
+    public Quaternion LastHeading = default;
+
     [KSPField(isPersistant = true)]
     private double throttle = 0.0;
 
@@ -34,7 +41,15 @@ public class BackgroundThrustVessel : VesselModule
     /// processing then you can use <see cref="SetThrottle(double)"/> in order to
     /// change the throttle up or down.
     /// </remarks>
-    public double Throttle => throttle;
+    public double Throttle
+    {
+        get
+        {
+            if (vessel?.loaded ?? false)
+                return vessel.ctrlState?.mainThrottle ?? throttle;
+            return throttle;
+        }
+    }
 
     /// <summary>
     /// The current vessel heading for the purposes of applying thrust.
@@ -51,7 +66,7 @@ public class BackgroundThrustVessel : VesselModule
     /// The current thrust applied on this vessel. Zero if not packed or in the
     /// background.
     /// </summary>
-    public Vector3d Thrust { get; private set; } = Vector3d.zero;
+    public Vector3d Thrust { get; internal set; } = Vector3d.zero;
 
     public TargetHeadingProvider TargetHeading { get; private set; }
 
@@ -64,6 +79,9 @@ public class BackgroundThrustVessel : VesselModule
 
     void FixedUpdate()
     {
+        if (!FlightGlobals.ready)
+            return;
+
         if (!vessel.loaded)
             BackgroundFixedUpdate();
         else if (vessel.packed)
@@ -79,6 +97,7 @@ public class BackgroundThrustVessel : VesselModule
     public void SetThrottle(double throttle, double UT)
     {
         throttle = UtilMath.Clamp01(throttle);
+        LastHeading = default;
 
         if (vessel.loaded)
         {
@@ -114,6 +133,8 @@ public class BackgroundThrustVessel : VesselModule
 
         if (heading is not null)
             enabled = true;
+
+        LastHeading = default;
 
         var prev = TargetHeading;
 
@@ -158,9 +179,16 @@ public class BackgroundThrustVessel : VesselModule
         if (!Vessel.loaded)
             return;
 
-        var heading = GetNewHeadingProvider();
-        if (TargetHeading is null || !heading.Equals(TargetHeading))
-            SetTargetHeading(heading, UT);
+        if (IsThrustPermitted(vessel))
+        {
+            var heading = GetNewHeadingProvider();
+            if (TargetHeading is null || !heading.Equals(TargetHeading))
+                SetTargetHeading(heading, UT);
+        }
+        else
+        {
+            SetTargetHeading(null);
+        }
     }
     #endregion
 
@@ -169,6 +197,7 @@ public class BackgroundThrustVessel : VesselModule
     {
         LastUpdateTime = Planetarium.GetUniversalTime();
         LastUpdateMass = vessel.totalMass;
+        LastHeading = default;
         throttle = vessel.ctrlState.mainThrottle;
         Thrust = Vector3d.zero;
     }
@@ -177,29 +206,59 @@ public class BackgroundThrustVessel : VesselModule
     #region Packed Vessel Handling
     void PackedFixedUpdate()
     {
-        throttle = vessel.ctrlState.mainThrottle;
-        Thrust = Vector3d.zero;
+        // Before updating control state we need to update the vessel orbit.
+        // The value stored in Thrust is the forces from the _last_ frame, which
+        // have been updated by FlightIntegrator.
 
-        var provider = Config.VesselInfoProvider;
         var now = Planetarium.GetUniversalTime();
         var lastUpdateTime = LastUpdateTime;
         var lastUpdateMass = LastUpdateMass;
-        var currentMass = provider.GetVesselMass(this, now);
+        var currentMass = vessel.totalMass;
+
+        // It takes a few frames for the vessel mass to actually get computed.
+        // We don't want to do anything until that happens.
+        if (currentMass <= 0.0)
+            return;
 
         LastUpdateTime = now;
         LastUpdateMass = currentMass;
+        throttle = vessel.ctrlState.mainThrottle;
 
         if (lastUpdateTime == 0.0)
             return;
 
-        if (TargetHeading is null)
+        if (!IsThrustPermitted(vessel))
+        {
+            SetThrottle(0.0);
+            return;
+        }
+
+        var parameters = new ThrustParameters
+        {
+            StartUT = lastUpdateTime,
+            StopUT = now,
+            StartMass = lastUpdateMass,
+            StopMass = vessel.totalMass,
+            Thrust = Thrust,
+        };
+
+        var lastHeading = LastHeading;
+        if (TargetHeading is not null)
+        {
+            TargetHeading.IntegrateThrust(this, parameters);
+        }
+        else
+        {
+            OrbitMath.IntegrateThrust(this, parameters);
             SetTargetHeading(GetFixedHeading());
+        }
+
+        // IntegrateThrust can set the target heading to null if it wants to
+        // cut thrust. We have nothing else to do in that case.
+        if (TargetHeading is null)
+            return;
 
         var target = TargetHeading.GetTargetHeading(now);
-        target.Orientation = ToVesselOrientation(target.Orientation);
-
-        // Protect against invalid heading vectors before they cause the vessel
-        // to get deleted because its state is NaN.
         if (!target.IsValid())
         {
             var tname = TargetHeading.GetType().Name;
@@ -220,28 +279,28 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
-        foreach (var engine in Engines)
-            engine.PackedEngineUpdate();
+        if (lastHeading != default)
+        {
+            var v1 = lastHeading * Vector3.forward;
+            var v2 = target.Orientation * Vector3.forward;
 
-        var thrust = provider.GetVesselThrust(this, now);
-        if (thrust == Vector3d.zero)
-            return;
+            if (Vector3d.Dot(v1, v2) < 0)
+            {
+                // When we get stuck near a singularity it pretty quickly progresses
+                // to getting a NaN orbit, which will get the vessel deleted.
+                //
+                // To prevent this we remove the heading provider if the target
+                // heading changes by more than 180 degrees after applying the impulse.
+                SetTargetHeading(GetFixedHeading());
+                target.Orientation = lastHeading;
+            }
+        }
+
+        LastHeading = target.Orientation;
 
         // Make sure that the vessel is pointing in the target direction.
         RotateToOrientation(target.Orientation);
         Config.OnTargetHeadingUpdate.Fire(this, target.Orientation);
-
-        var parameters = new ThrustParameters
-        {
-            StartUT = lastUpdateTime,
-            StopUT = now,
-            StartMass = lastUpdateMass,
-            StopMass = vessel.totalMass,
-            Thrust = thrust,
-        };
-
-        Thrust = thrust;
-        TargetHeading.IntegrateThrust(this, parameters);
     }
     #endregion
 
@@ -254,7 +313,7 @@ public class BackgroundThrustVessel : VesselModule
             return;
 
         var provider = Config.VesselInfoProvider;
-        if (!provider.AllowBackground || TargetHeading is null)
+        if (provider is null || TargetHeading is null)
         {
             // If we aren't set up to run any updates then we disable ourselves
             // to avoid extra overhead.
@@ -286,7 +345,6 @@ public class BackgroundThrustVessel : VesselModule
         }
 
         var target = TargetHeading.GetTargetHeading(UT);
-        target.Orientation = ToVesselOrientation(target.Orientation);
 
         // Protect against invalid heading vectors before they cause the vessel
         // to get deleted because its state is NaN.
@@ -333,7 +391,7 @@ public class BackgroundThrustVessel : VesselModule
                 // we can potentially end up background vessels running extra
                 // FixedUpdates unecessarily.
                 enabled = false;
-            else if (provider.DisableOnZeroThrustInBackground)
+            else if (provider.DisableOnZeroThrust)
                 enabled = false;
             return;
         }
@@ -344,35 +402,10 @@ public class BackgroundThrustVessel : VesselModule
     #endregion
 
     #region Helpers
-    static readonly Quaternion XzyRot = new Matrix4x4(
-        new Vector4(1, 0, 0, 0),
-        new Vector4(0, 0, 1, 0),
-        new Vector4(0, 1, 0, 0),
-        Vector4.zero
-    ).rotation;
-
-    private Quaternion ToVesselOrientation(Quaternion orientation)
-    {
-        // KSP has transform.forward as the forward direction but we want to
-        // orient the vessel relative to transform.up. As such, we need to
-        // rotate the orientation to match.
-
-        // var rot = Quaternion.FromToRotation(transform.up, transform.forward);
-        return orientation;
-    }
-
     // This is its own method so that it can be patched in the future if needed.
     private void RotateToOrientation(Quaternion target)
     {
         vessel.SetRotation(target);
-    }
-
-    private IEnumerator DelayPreserveThrottle(float throttle, int frames = 1)
-    {
-        for (int i = 0; i < frames; ++i)
-            yield return new WaitForEndOfFrame();
-
-        vessel.ctrlState?.mainThrottle = throttle;
     }
 
     private TargetHeadingProvider GetNewHeadingProvider()
@@ -398,6 +431,12 @@ public class BackgroundThrustVessel : VesselModule
 
         return mass;
     }
+
+    /// <summary>
+    /// Are we in a situation where it is valid to emit thrust in warp?
+    /// </summary>
+    /// <returns></returns>
+    public static bool IsThrustPermitted(Vessel vessel) => vessel.IsOrbiting();
     #endregion
 
     #region Event Handlers
@@ -424,9 +463,23 @@ public class BackgroundThrustVessel : VesselModule
 
     public override void OnGoOnRails()
     {
-        TargetHeading ??= GetNewHeadingProvider();
-        if (vessel.IsOrbiting())
-            StartCoroutine(DelayPreserveThrottle(vessel.ctrlState.mainThrottle));
+        if (IsThrustPermitted(vessel))
+        {
+            if (TargetHeading is null)
+                RefreshTargetHeading();
+        }
+        else
+        {
+            SetTargetHeading(null);
+        }
+    }
+
+    // OnVesselPack is emitted after ctrlState.Neutralize(), so it can be used
+    // to restore the control state.
+    void OnVesselPack()
+    {
+        if (IsThrustPermitted(vessel))
+            vessel.ctrlState.mainThrottle = (float)throttle;
     }
 
     public override void OnGoOffRails()

@@ -8,7 +8,7 @@ namespace BackgroundThrust;
 [KSPAddon(KSPAddon.Startup.AllGameScenes, once: false)]
 internal class EventDispatcher : MonoBehaviour
 {
-    internal static EventDispatcher Instance;
+    internal static EventDispatcher Instance { get; private set; }
 
     #region VesselModule Caching
     readonly Dictionary<Guid, BackgroundThrustVessel> modules = [];
@@ -22,6 +22,21 @@ internal class EventDispatcher : MonoBehaviour
         }
 
         return module;
+    }
+    #endregion
+
+    #region PartModule Caching
+    readonly Dictionary<Part, BackgroundEngine> engines = [];
+
+    internal BackgroundEngine GetBackgroundEngine(Part p)
+    {
+        if (!engines.TryGetValue(p, out var engine))
+        {
+            engine = p.FindModuleImplementing<BackgroundEngine>();
+            engines[p] = engine;
+        }
+
+        return engine;
     }
     #endregion
 
@@ -40,6 +55,7 @@ internal class EventDispatcher : MonoBehaviour
     {
         GameEvents.onVesselPartCountChanged.Add(OnVesselPartCountChanged);
         GameEvents.onMultiModeEngineSwitchActive.Add(OnMultiModeEngineSwitchActive);
+        GameEvents.onVesselUnloaded.Add(OnVesselUnloaded);
         GameEvents.onVesselDestroy.Add(OnVesselDestroy);
         Config.OnAutopilotModeChange.Add(OnVesselAutopilotModeChanged);
 
@@ -50,8 +66,9 @@ internal class EventDispatcher : MonoBehaviour
     {
         Instance = null;
 
-        GameEvents.onVesselWasModified.Remove(OnVesselPartCountChanged);
+        GameEvents.onVesselPartCountChanged.Remove(OnVesselPartCountChanged);
         GameEvents.onMultiModeEngineSwitchActive.Remove(OnMultiModeEngineSwitchActive);
+        GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
         Config.OnAutopilotModeChange.Remove(OnVesselAutopilotModeChanged);
     }
@@ -63,6 +80,9 @@ internal class EventDispatcher : MonoBehaviour
         // Avoid proactively rescanning all vessel modules in onVesselWasModified
         // since that callback tends to be quite slow in KSP already.
         module.Engines = null;
+
+        // We don't want the cache to keep part modules around when it shouldn't.
+        engines.Clear();
     }
 
     void OnVesselAutopilotModeChanged(
@@ -88,6 +108,14 @@ internal class EventDispatcher : MonoBehaviour
     void OnVesselDestroy(Vessel vessel)
     {
         modules.Remove(vessel.id);
+
+        if (vessel.loaded)
+            engines.Clear();
+    }
+
+    void OnVesselUnloaded(Vessel vessel)
+    {
+        engines.Clear();
     }
     #endregion
 
@@ -106,7 +134,7 @@ internal class EventDispatcher : MonoBehaviour
         if (!vessel.packed)
             return;
 
-        if (!vessel.IsOrbiting())
+        if (!BackgroundThrustVessel.IsThrustPermitted(vessel))
         {
             vessel.ctrlState.mainThrottle = 0f;
             return;

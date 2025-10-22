@@ -11,6 +11,14 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+### Changed
+* Thrust in warp no longer has to explicitly run the engine module `FixedUpdate`
+  since it now runs itself as if it wasn't in warp.
+
+### Fixed
+* MechJeb `TARGET`, `RELATIVE VELOCITY`, and `MANEUVER NODE` reference frames
+  now work correctly.
+
 ## 0.3.0
 ### Added
 * Added a new module for any engine using SolverEngines.

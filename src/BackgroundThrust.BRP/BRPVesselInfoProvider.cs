@@ -3,18 +3,13 @@ using BackgroundResourceProcessing;
 
 namespace BackgroundThrust.BRP;
 
-public class BRPVesselInfoProvider : StockVesselInfoProvider
+public class BRPVesselInfoProvider : VesselInfoProvider
 {
-    public override bool AllowBackground => true;
-
-    public override bool DisableOnZeroThrustInBackground => true;
+    public override bool DisableOnZeroThrust => true;
 
     public override double GetVesselMass(BackgroundThrustVessel module, double UT)
     {
         var vessel = module.Vessel;
-        if (vessel.loaded)
-            return base.GetVesselMass(module, UT);
-
         var info = EventDispatcher.Instance.GetVesselInfo(vessel);
         var dryMass = module.DryMass ?? vessel.totalMass;
 
@@ -24,9 +19,6 @@ public class BRPVesselInfoProvider : StockVesselInfoProvider
     public override Vector3d GetVesselThrust(BackgroundThrustVessel module, double UT)
     {
         var vessel = module.Vessel;
-        if (vessel.loaded)
-            return base.GetVesselThrust(module, UT);
-
         var info = EventDispatcher.Instance.GetVesselInfo(vessel);
         return module.Heading * info.Thrust;
     }

@@ -8,7 +8,7 @@ namespace BackgroundThrust.Kerbalism;
 using ResourceBroker = KERBALISM.ResourceBroker;
 using ResourceCache = KERBALISM.ResourceCache;
 
-public class KerbalismVesselInfoProvider : StockVesselInfoProvider
+public class KerbalismVesselInfoProvider : VesselInfoProvider
 {
     public static ResourceBroker EngineBroker = ResourceBroker.GetOrCreate(
         "bt-engine",
@@ -18,16 +18,11 @@ public class KerbalismVesselInfoProvider : StockVesselInfoProvider
 
     public const string ThrustResourceName = "_BackgroundThrust";
 
-    public override bool AllowBackground => true;
-
-    public override bool DisableOnZeroThrustInBackground => false;
+    public override bool DisableOnZeroThrust => false;
 
     public override double GetVesselMass(BackgroundThrustVessel module, double UT)
     {
         var vessel = module.Vessel;
-        if (vessel.loaded)
-            return base.GetVesselMass(module, UT);
-
         var vd = vessel.KerbalismData();
         var dryMass = module.DryMass ?? vessel.totalMass;
 
@@ -59,9 +54,6 @@ public class KerbalismVesselInfoProvider : StockVesselInfoProvider
     public override Vector3d GetVesselThrust(BackgroundThrustVessel module, double UT)
     {
         var vessel = module.Vessel;
-        if (vessel.loaded)
-            return base.GetVesselThrust(module, UT);
-
         var thrust = ResourceCache.GetResource(vessel, ThrustResourceName)?.AverageRate ?? 0.0;
         return module.Heading * thrust;
     }
