@@ -18,6 +18,7 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 ### Fixed
 * MechJeb `TARGET`, `RELATIVE VELOCITY`, and `MANEUVER NODE` reference frames
   now work correctly.
+* Avoid setting vessel orientation if both thrust and throttle are zero.
 
 ## 0.3.0
 ### Added

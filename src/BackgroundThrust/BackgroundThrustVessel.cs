@@ -233,6 +233,9 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
+        if (Thrust == Vector3d.zero && Throttle == 0.0)
+            return;
+
         var parameters = new ThrustParameters
         {
             StartUT = lastUpdateTime,
