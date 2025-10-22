@@ -11,6 +11,7 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.4.0
 ### Changed
 * Thrust in warp no longer has to explicitly run the engine module `FixedUpdate`
   since it now runs itself as if it wasn't in warp.
