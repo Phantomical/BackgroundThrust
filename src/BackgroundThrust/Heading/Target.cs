@@ -1,4 +1,4 @@
-using System;
+using static VesselAutopilot;
 
 namespace BackgroundThrust.Heading;
 
@@ -46,8 +46,10 @@ public class AntiTarget : Target
     }
 }
 
-public class TargetPrograde : TargetBase
+public class TargetPrograde : TargetBase, ISASHeading
 {
+    public virtual AutopilotMode Mode => AutopilotMode.Target;
+
     public TargetPrograde() { }
 
     protected Vector3d? GetRelVelocityDirection(double UT)
@@ -73,6 +75,8 @@ public class TargetPrograde : TargetBase
 
 public class TargetRetrograde : TargetPrograde
 {
+    public override AutopilotMode Mode => AutopilotMode.AntiTarget;
+
     public TargetRetrograde() { }
 
     public override TargetHeading GetTargetHeading(double UT)

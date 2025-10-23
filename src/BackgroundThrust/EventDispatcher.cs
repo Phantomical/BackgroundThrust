@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using BackgroundThrust.Heading;
 using BackgroundThrust.Utils;
 using UnityEngine;
+using static GameEvents;
 
 namespace BackgroundThrust;
 
@@ -58,6 +60,7 @@ internal class EventDispatcher : MonoBehaviour
         GameEvents.onVesselUnloaded.Add(OnVesselUnloaded);
         GameEvents.onVesselDestroy.Add(OnVesselDestroy);
         Config.OnAutopilotModeChange.Add(OnVesselAutopilotModeChanged);
+        Config.OnTargetHeadingProviderChanged.Add(OnTargetHeadingProviderChanged);
 
         Instance = this;
     }
@@ -85,9 +88,7 @@ internal class EventDispatcher : MonoBehaviour
         engines.Clear();
     }
 
-    void OnVesselAutopilotModeChanged(
-        GameEvents.HostedFromToAction<Vessel, VesselAutopilot.AutopilotMode> evt
-    )
+    void OnVesselAutopilotModeChanged(HostedFromToAction<Vessel, VesselAutopilot.AutopilotMode> evt)
     {
         if (!evt.host.packed || !evt.host.loaded)
             return;
@@ -103,6 +104,27 @@ internal class EventDispatcher : MonoBehaviour
             return;
 
         module.OnMultiModeEngineSwitchActive();
+    }
+
+    void OnTargetHeadingProviderChanged(
+        HostedFromToAction<BackgroundThrustVessel, TargetHeadingProvider> evt
+    )
+    {
+        var vessel = evt.host.Vessel;
+        if (vessel != FlightGlobals.ActiveVessel)
+            return;
+
+        var autopilot = vessel.Autopilot;
+        var to = evt.to as ISASHeading;
+        if (to is not null)
+        {
+            var mode = to.Mode;
+
+            if (autopilot.Mode != mode)
+                autopilot.SetMode(mode);
+        }
+        else if (autopilot.Enabled)
+            autopilot.Disable();
     }
 
     void OnVesselDestroy(Vessel vessel)

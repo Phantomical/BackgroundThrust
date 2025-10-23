@@ -14,6 +14,7 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 ### Changed
 * Added a log message when the target orientation mode gets kicked to a fixed
   heading mode.
+* SAS mode is now synchronized with the target heading while in warp.
 
 ### Fixed
 * Fixed an error where an engine would fail to be recorded for Background

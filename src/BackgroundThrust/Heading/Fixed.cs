@@ -9,6 +9,8 @@ public sealed class FixedHeading() : TargetHeadingProvider
 
     public Quaternion Orientation => orientation;
 
+    public VesselAutopilot.AutopilotMode Mode => VesselAutopilot.AutopilotMode.StabilityAssist;
+
     public FixedHeading(Quaternion orientation)
         : this()
     {

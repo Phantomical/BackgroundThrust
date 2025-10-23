@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using BackgroundThrust.Heading;
 using static VesselAutopilot;
 using SpeedDisplayModes = FlightGlobals.SpeedDisplayModes;
@@ -36,18 +37,27 @@ public class SASHeadingProvider : ICurrentHeadingProvider
     {
         var vessel = module.Vessel;
         var autopilot = vessel.Autopilot;
-
+        if (autopilot is null)
+            return null;
         if (!autopilot.Enabled)
             return null;
 
         var displayMode = FlightGlobals.speedDisplayMode;
-        return displayMode switch
+        var heading = displayMode switch
         {
             SpeedDisplayModes.Orbit => GetProviderOrbit(module),
             SpeedDisplayModes.Surface => GetProviderSurface(module),
             SpeedDisplayModes.Target => GetProviderTarget(module),
             _ => GetProviderCommon(module),
         };
+
+        if (heading is ISASHeading sasHeading)
+        {
+            if (!autopilot.CanSetMode(sasHeading.Mode))
+                return null;
+        }
+
+        return heading;
     }
 
     private TargetHeadingProvider GetProviderOrbit(BackgroundThrustVessel module)

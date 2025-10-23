@@ -4,7 +4,7 @@ using static BackgroundThrust.Utils.MathUtil;
 
 namespace BackgroundThrust.Heading;
 
-public class Maneuver : TargetHeadingProvider
+public class Maneuver : TargetHeadingProvider, ISASHeading
 {
     ManeuverNode Node
     {
@@ -18,6 +18,8 @@ public class Maneuver : TargetHeadingProvider
             return nodes[0];
         }
     }
+
+    public VesselAutopilot.AutopilotMode Mode => VesselAutopilot.AutopilotMode.Maneuver;
 
     public Maneuver() { }
 
