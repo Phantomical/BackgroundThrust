@@ -26,7 +26,7 @@ public class BackgroundThrustVessel : VesselModule
     /// may be invalid (<c>default</c>) under some conditions. Always check
     /// before attempting to use it.
     /// </summary>
-    public Quaternion LastHeading = default;
+    public Quaternion? LastHeading = null;
 
     [KSPField(isPersistant = true)]
     private double throttle = 0.0;
@@ -282,20 +282,27 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
-        if (lastHeading != default)
+        if (lastHeading is Quaternion heading)
         {
-            var v1 = lastHeading * Vector3.forward;
+            var v1 = heading * Vector3.forward;
             var v2 = target.Orientation * Vector3.forward;
 
-            if (Vector3d.Dot(v1, v2) < 0)
+            if (Vector3.Dot(v1, v2) < 0)
             {
+                var dist = Math.Acos(Vector3.Dot(v1, v2)) * UtilMath.Deg2Rad;
+
+                LogUtil.Log(
+                    $"Target orientation changed by more than 90 degrees ({dist:F2})."
+                        + " Resetting to fixed heading to prevent oscillation."
+                );
+
                 // When we get stuck near a singularity it pretty quickly progresses
                 // to getting a NaN orbit, which will get the vessel deleted.
                 //
                 // To prevent this we remove the heading provider if the target
                 // heading changes by more than 180 degrees after applying the impulse.
                 SetTargetHeading(GetFixedHeading());
-                target.Orientation = lastHeading;
+                target.Orientation = heading;
             }
         }
 

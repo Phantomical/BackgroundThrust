@@ -11,9 +11,15 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+### Changed
+* Added a log message when the target orientation mode gets kicked to a fixed
+  heading mode.
+
 ### Fixed
 * Fixed an error where an engine would fail to be recorded for Background
   Resource Processing if it had an alternator linked to a `MultiModeEngine`.
+* Fixed an error where SAS would sometimes switch to a fixed heading mode when
+  switching between headings that faced in opposite directions.
 
 ## 0.4.0
 ### Changed
