@@ -50,9 +50,6 @@ internal static class FlightIntegrator_FixedUpdate_Patch
             part.forces.Clear();
         }
 
-        if (thrust == Vector3d.zero)
-            return;
-
         var module = vessel.GetBackgroundThrust();
         if (module is null)
             return;

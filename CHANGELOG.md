@@ -21,6 +21,8 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
   Resource Processing if it had an alternator linked to a `MultiModeEngine`.
 * Fixed an error where SAS would sometimes switch to a fixed heading mode when
   switching between headings that faced in opposite directions.
+* Fixed an error where cutting thrust would result in the vessel continuing
+  to accelerate.
 
 ## 0.4.0
 ### Changed
