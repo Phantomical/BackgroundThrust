@@ -48,9 +48,21 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
         var alternators = module.part.FindModulesImplementing<ModuleAlternator>();
         foreach (var alternator in alternators)
         {
-            var alternatorEngine = (ModuleEngines)AlternatorEngineField.GetValue(alternator);
-            if (!ReferenceEquals(engine, alternatorEngine))
+            var alternatorEngine = (IEngineStatus)AlternatorEngineField.GetValue(alternator);
+            if (alternatorEngine is MultiModeEngine)
+            {
+                if (!ReferenceEquals(module.MultiModeEngine, alternatorEngine))
+                    continue;
+            }
+            else if (alternatorEngine is ModuleEngines)
+            {
+                if (!ReferenceEquals(module.Engine, alternatorEngine))
+                    continue;
+            }
+            else
+            {
                 continue;
+            }
 
             foreach (var resource in alternator.resHandler.inputResources)
             {

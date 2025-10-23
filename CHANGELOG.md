@@ -11,6 +11,10 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+### Fixed
+* Fixed an error where an engine would fail to be recorded for Background
+  Resource Processing if it had an alternator linked to a `MultiModeEngine`.
+
 ## 0.4.0
 ### Changed
 * Thrust in warp no longer has to explicitly run the engine module `FixedUpdate`
