@@ -23,7 +23,7 @@ public class BackgroundThrustVessel : VesselModule
 
     /// <summary>
     /// The last target heading that was held by this vessel. Note that this
-    /// may be invalid (<c>default</c>) under some conditions. Always check
+    /// may be invalid (<c>null</c>) under some conditions. Always check
     /// before attempting to use it.
     /// </summary>
     public Quaternion? LastHeading = null;
@@ -197,7 +197,7 @@ public class BackgroundThrustVessel : VesselModule
     {
         LastUpdateTime = Planetarium.GetUniversalTime();
         LastUpdateMass = vessel.totalMass;
-        LastHeading = default;
+        LastHeading = null;
         throttle = vessel.ctrlState.mainThrottle;
         Thrust = Vector3d.zero;
     }
