@@ -471,6 +471,22 @@ public class BackgroundThrustVessel : VesselModule
         }
     }
 
+    // OnVesselPack is emitted after ctrlState.Neutralize(), so it can be used
+    // to restore the control state.
+    void OnVesselPack()
+    {
+        if (IsThrustPermitted(vessel))
+            vessel.ctrlState.mainThrottle = (float)throttle;
+    }
+
+    internal void OnSasToggled(bool active)
+    {
+        if (!vessel.loaded || !vessel.packed)
+            return;
+
+        RefreshTargetHeading();
+    }
+
     public override void OnGoOnRails()
     {
         if (IsThrustPermitted(vessel))
@@ -482,14 +498,6 @@ public class BackgroundThrustVessel : VesselModule
         {
             SetTargetHeading(null);
         }
-    }
-
-    // OnVesselPack is emitted after ctrlState.Neutralize(), so it can be used
-    // to restore the control state.
-    void OnVesselPack()
-    {
-        if (IsThrustPermitted(vessel))
-            vessel.ctrlState.mainThrottle = (float)throttle;
     }
 
     public override void OnGoOffRails()

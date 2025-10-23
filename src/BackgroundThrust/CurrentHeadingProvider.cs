@@ -39,7 +39,7 @@ public class SASHeadingProvider : ICurrentHeadingProvider
         var autopilot = vessel.Autopilot;
         if (autopilot is null)
             return null;
-        if (!autopilot.Enabled)
+        if (!vessel.ActionGroups[KSPActionGroup.SAS])
             return null;
 
         var displayMode = FlightGlobals.speedDisplayMode;
