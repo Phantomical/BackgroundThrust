@@ -11,6 +11,10 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+### Fixed
+* Correctly handle cases where the control point is not aligned with the ship
+  orientation.
+
 ## 0.5.0
 ### Changed
 * Added a log message when the target orientation mode gets kicked to a fixed

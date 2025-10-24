@@ -417,6 +417,15 @@ public class BackgroundThrustVessel : VesselModule
     // This is its own method so that it can be patched in the future if needed.
     private void RotateToOrientation(Quaternion target)
     {
+        if (vessel.ReferenceTransform is not null)
+        {
+            // We want the reference transform to point in the target direction
+            // so we need to correct the orientation to apply correctly.
+            var relative =
+                vessel.transform.rotation * Quaternion.Inverse(vessel.ReferenceTransform.rotation);
+            target = target * relative;
+        }
+
         vessel.SetRotation(target);
     }
 
