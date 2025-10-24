@@ -289,7 +289,7 @@ public class BackgroundThrustVessel : VesselModule
 
             if (Vector3.Dot(v1, v2) < 0)
             {
-                var dist = Math.Acos(Vector3.Dot(v1, v2)) * UtilMath.Deg2Rad;
+                var dist = Vector3.Angle(v1, v2);
 
                 LogUtil.Log(
                     $"Target orientation changed by more than 90 degrees ({dist:F2})."
@@ -302,7 +302,9 @@ public class BackgroundThrustVessel : VesselModule
                 // To prevent this we remove the heading provider if the target
                 // heading changes by more than 180 degrees after applying the impulse.
                 SetTargetHeading(GetFixedHeading());
-                target.Orientation = heading;
+
+                // Do not rotate the vessel.
+                return;
             }
         }
 
