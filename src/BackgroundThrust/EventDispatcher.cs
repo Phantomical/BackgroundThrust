@@ -74,6 +74,7 @@ internal class EventDispatcher : MonoBehaviour
         GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
         Config.OnAutopilotModeChange.Remove(OnVesselAutopilotModeChanged);
+        Config.OnTargetHeadingProviderChanged.Remove(OnTargetHeadingProviderChanged);
     }
 
     void OnVesselPartCountChanged(Vessel vessel)
