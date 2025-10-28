@@ -30,6 +30,8 @@ public class EventDispatcher : MonoBehaviour
             return info;
 
         var processor = vessel.FindVesselModuleImplementing<BackgroundResourceProcessor>();
+        if (processor is null)
+            return new();
         var mass = processor.GetWetMass();
         var module = GetVesselModule(vessel);
         var throttle = module.Throttle;
