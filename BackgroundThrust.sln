@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.RealFuels"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.RealismOverhaul", "src\BackgroundThrust.RealismOverhaul\BackgroundThrust.RealismOverhaul.csproj", "{0331E6B5-83F4-402B-8A25-7D3CA8CD99F9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundThrust.PersistentRotation", "src\BackgroundThrust.PersistentRotation\BackgroundThrust.PersistentRotation.csproj", "{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +101,18 @@ Global
 		{0331E6B5-83F4-402B-8A25-7D3CA8CD99F9}.Release|x64.Build.0 = Release|Any CPU
 		{0331E6B5-83F4-402B-8A25-7D3CA8CD99F9}.Release|x86.ActiveCfg = Release|Any CPU
 		{0331E6B5-83F4-402B-8A25-7D3CA8CD99F9}.Release|x86.Build.0 = Release|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Debug|x64.Build.0 = Debug|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Debug|x86.Build.0 = Debug|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Release|x64.ActiveCfg = Release|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Release|x64.Build.0 = Release|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Release|x86.ActiveCfg = Release|Any CPU
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -110,6 +124,7 @@ Global
 		{4120B8DC-980B-4BAE-ABBA-2CE96D029628} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{6EDD4FAB-C59C-4154-9579-FDDF823F3D8F} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{0331E6B5-83F4-402B-8A25-7D3CA8CD99F9} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{488DEA90-D00D-4FDB-AEB1-930EEC497ECC} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D9B233F0-AFF7-419E-A4EE-04E26A75F140}
