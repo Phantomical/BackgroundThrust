@@ -54,7 +54,7 @@ public class BackgroundThrustVessel : VesselModule
     /// <summary>
     /// The current vessel heading for the purposes of applying thrust.
     /// </summary>
-    public Vector3d Heading => vessel?.ReferenceTransform?.up ?? vessel.transform.up;
+    public Vector3d Heading => vessel.ReferenceTransform.up;
 
     /// <summary>
     /// The known dry mass of the vessel. This is only updated when the vessel
@@ -67,6 +67,35 @@ public class BackgroundThrustVessel : VesselModule
     /// background.
     /// </summary>
     public Vector3d Thrust { get; internal set; } = Vector3d.zero;
+
+    /// <summary>
+    /// Is this vessel currently actively using its engines, either in time warp
+    /// or in the background.
+    /// </summary>
+    public bool Active
+    {
+        get
+        {
+            if (vessel.loaded)
+            {
+                if (!vessel.packed)
+                    return false;
+                if (Thrust == Vector3d.zero && Throttle == 0.0)
+                    return false;
+                return true;
+            }
+            else
+            {
+                if (TargetHeading is null)
+                    return false;
+                if (Thrust == Vector3d.zero)
+                    return false;
+                if (Throttle == 0.0)
+                    return false;
+                return true;
+            }
+        }
+    }
 
     public TargetHeadingProvider TargetHeading { get; private set; }
 
@@ -378,10 +407,6 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
-        // Make sure that the vessel is pointing in the target direction.
-        RotateToOrientation(target.Orientation);
-        Config.OnBackgroundTargetHeadingUpdate.Fire(this, target.Orientation);
-
         var thrust = provider.GetVesselThrust(this, UT);
         var parameters = new ThrustParameters
         {
@@ -389,10 +414,12 @@ public class BackgroundThrustVessel : VesselModule
             StopUT = UT,
             StartMass = LastUpdateMass,
             StopMass = currentMass,
-            Thrust = thrust,
+            Thrust = thrust * Heading,
         };
 
-        if (thrust == Vector3d.zero)
+        Thrust = parameters.Thrust;
+
+        if (thrust == 0.0)
         {
             if (throttle == 0.0)
                 // Zero thrust and zero throttle means we disable ourselves
@@ -408,7 +435,10 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
-        Thrust = thrust;
+        // Make sure that the vessel is pointing in the target direction.
+        RotateToOrientation(target.Orientation);
+        Config.OnBackgroundTargetHeadingUpdate.Fire(this, target.Orientation);
+
         TargetHeading.IntegrateThrust(this, parameters);
     }
     #endregion
@@ -417,16 +447,16 @@ public class BackgroundThrustVessel : VesselModule
     // This is its own method so that it can be patched in the future if needed.
     private void RotateToOrientation(Quaternion target)
     {
-        if (vessel.ReferenceTransform is not null)
-        {
-            // We want the reference transform to point in the target direction
-            // so we need to correct the orientation to apply correctly.
-            var relative =
-                vessel.transform.rotation * Quaternion.Inverse(vessel.ReferenceTransform.rotation);
-            target = target * relative;
-        }
+        // We need to rotate the vessel so that the reference transform is
+        // oriented at the target orientation.
+        //
+        // We do this by subtracting the original rotation of the reference
+        // part from the target rotation.
 
-        vessel.SetRotation(target);
+        var rprot = vessel.GetReferenceTransformPart()?.orgRot ?? Quaternion.identity;
+        var final = target * Quaternion.Inverse(rprot);
+
+        vessel.SetRotation(final);
     }
 
     private TargetHeadingProvider GetNewHeadingProvider()

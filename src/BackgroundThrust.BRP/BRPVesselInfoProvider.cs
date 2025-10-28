@@ -16,10 +16,10 @@ public class BRPVesselInfoProvider : VesselInfoProvider
         return dryMass + info.WetMass + info.WetMassRate * Math.Max(UT - info.LastUpdateUT, 0.0);
     }
 
-    public override Vector3d GetVesselThrust(BackgroundThrustVessel module, double UT)
+    public override double GetVesselThrust(BackgroundThrustVessel module, double UT)
     {
         var vessel = module.Vessel;
         var info = EventDispatcher.Instance.GetVesselInfo(vessel);
-        return module.Heading * info.Thrust;
+        return info.Thrust;
     }
 }

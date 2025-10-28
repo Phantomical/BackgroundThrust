@@ -52,5 +52,5 @@ public abstract class VesselInfoProvider
     /// but may vary somewhat when processing unloaded vessels.
     /// </para>
     /// </remarks>
-    public abstract Vector3d GetVesselThrust(BackgroundThrustVessel module, double UT);
+    public abstract double GetVesselThrust(BackgroundThrustVessel module, double UT);
 }

@@ -11,6 +11,10 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+### Fixed
+* Correctly handle cases where the control point is not aligned with the ship
+  for real this time (hopefully).
+
 ## 0.5.1
 ### Fixed
 * Correctly handle cases where the control point is not aligned with the ship

@@ -51,10 +51,9 @@ public class KerbalismVesselInfoProvider : VesselInfoProvider
         return mass;
     }
 
-    public override Vector3d GetVesselThrust(BackgroundThrustVessel module, double UT)
+    public override double GetVesselThrust(BackgroundThrustVessel module, double UT)
     {
         var vessel = module.Vessel;
-        var thrust = ResourceCache.GetResource(vessel, ThrustResourceName)?.AverageRate ?? 0.0;
-        return module.Heading * thrust;
+        return ResourceCache.GetResource(vessel, ThrustResourceName)?.AverageRate ?? 0.0;
     }
 }
