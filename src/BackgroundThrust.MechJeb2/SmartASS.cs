@@ -128,7 +128,7 @@ public class SmartASS : TargetHeadingProvider
                 if (Target is null)
                     return Quaternion.identity;
 
-                fwd = (Target.GetObtVelocity() - Vessel.GetObtVelocity()).normalized;
+                fwd = (Vessel.GetObtVelocity() - Target.GetObtVelocity()).normalized;
                 up = Vector3d.Cross(fwd, GetOrbitNormal());
 
                 Vector3.OrthoNormalize(ref fwd, ref up);

@@ -11,6 +11,8 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+### Fixed
+* Point mechjeb `TARGET_RELATIVE` orientation frame in the correct direction.
 
 ## 0.6.0
 ### Added
