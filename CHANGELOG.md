@@ -11,6 +11,13 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.6.2
+### Fixed
+* Warp buffer now keeps the buffer inventories around as zero-sized part
+  resources instead of destroying and recreating them each time you go into or
+  out of time warp. This should (hopefully) fix the stutter when entering or
+  leaving time warp.
+
 ## 0.6.1
 ### Fixed
 * Point mechjeb `TARGET_RELATIVE` orientation frame in the correct direction.
