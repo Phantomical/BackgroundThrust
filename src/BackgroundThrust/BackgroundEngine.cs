@@ -1,7 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using BackgroundThrust.Utils;
+using Smooth.Collections;
 using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.Rendering;
 
 namespace BackgroundThrust;
 
@@ -30,15 +35,13 @@ public class BackgroundEngine : PartModule
     [KSPField]
     public bool AllowBackgroundProcessing = true;
 
-    [KSPField]
-    private double RequiredEC = 0.0;
-
     #region Event Handlers
     public override void OnStart(StartState state)
     {
         if (state == StartState.Editor)
         {
-            enabled = false;
+            this.enabled = false;
+            this.isEnabled = false;
             return;
         }
 
@@ -47,6 +50,13 @@ public class BackgroundEngine : PartModule
         GameEvents.onTimeWarpRateChanged.Add(OnTimeWarpRateChanged);
         GameEvents.onVesselGoOnRails.Add(OnVesselGoOnRails);
         GameEvents.onVesselGoOffRails.Add(OnVesselGoOffRails);
+
+        var isEnabled =
+            state == StartState.Editor
+                ? (UI_Toggle)Fields[nameof(IsEnabled)].uiControlEditor
+                : (UI_Toggle)Fields[nameof(IsEnabled)].uiControlFlight;
+
+        isEnabled.onFieldChanged = (a, b) => OnEnabledChanged();
     }
 
     protected virtual void OnDestroy()
@@ -66,6 +76,7 @@ public class BackgroundEngine : PartModule
             Engine = MultiModeEngine.SecondaryEngine;
 
         ClearBuffers();
+        UpdateBuffers();
     }
 
     protected virtual void OnTimeWarpRateChanged()
@@ -96,121 +107,138 @@ public class BackgroundEngine : PartModule
     {
         ClearBuffers();
     }
+
+    void OnEnabledChanged()
+    {
+        UpdateBuffers();
+    }
     #endregion
 
     #region Buffer Handling
-    struct BufferInfo()
+    class Buffer : IConfigNode
     {
-        public double? OriginalMaxAmount = null;
+        public double OriginalMaxAmount;
         public double FuelFlow;
+
         public PartResource Resource;
         public Propellant Propellant;
+
+        public void Load(ConfigNode node)
+        {
+            node.TryGetValue(nameof(OriginalMaxAmount), ref OriginalMaxAmount);
+            node.TryGetValue(nameof(FuelFlow), ref FuelFlow);
+        }
+
+        public void Save(ConfigNode node)
+        {
+            node.AddValue(nameof(OriginalMaxAmount), OriginalMaxAmount);
+            node.AddValue(nameof(FuelFlow), FuelFlow);
+        }
     }
 
-    BufferInfo[] buffers;
+    readonly Dictionary<string, Buffer> buffers = [];
 
-    private BufferInfo[] GetOrCreateBuffers()
+    private void ClearBuffers()
     {
-        if (this.buffers is not null)
-            ClearBuffers();
+        List<string> dead = null;
 
-        if (Engine is null)
-            return [];
-
-        var propellants = Engine.propellants;
-        var buffers = new BufferInfo[propellants.Count];
-
-        // Rebuilding resource sets is a fairly expensive operation.
-        using var guard = DisableUpdateResourcesOnEvent();
-
-        int index = 0;
-        foreach (var propellant in propellants)
+        foreach (var (resourceName, buffer) in buffers)
         {
-            var resource = part.Resources[propellant.name];
-            var info = new BufferInfo()
-            {
-                FuelFlow = Engine.getMaxFuelFlow(propellant),
-                Resource = resource,
-                Propellant = propellant,
-                OriginalMaxAmount = resource?.maxAmount,
-            };
-
+            var propellant = buffer.Propellant;
+            var resource = buffer.Resource;
             if (resource is null)
             {
-                ConfigNode node = new("RESOURCE");
-                node.AddValue("name", propellant.name);
-                node.AddValue("maxAmount", 0);
-                node.AddValue("amount", 0);
-                node.AddValue("isVisible", false);
-
-                info.Resource = part.AddResource(node);
+                dead ??= [];
+                dead.Add(resourceName);
+                continue;
             }
 
-            if (propellant.id == PartResourceLibrary.ElectricityHashcode)
-                RequiredEC = info.FuelFlow;
+            resource.maxAmount = buffer.OriginalMaxAmount;
 
-            buffers[index] = info;
-            index += 1;
-        }
-
-        return buffers;
-    }
-
-    public void UpdateBuffers()
-    {
-        buffers ??= GetOrCreateBuffers();
-        double warp = TimeWarp.fixedDeltaTime;
-
-        foreach (var info in buffers)
-        {
-            var bufferAmount = info.FuelFlow * warp * Config.BufferCapacityMult;
-
-            if (info.OriginalMaxAmount is double amount)
-                bufferAmount = Math.Max(amount, bufferAmount);
-
-            info.Resource.maxAmount = bufferAmount;
-        }
-    }
-
-    public void ClearBuffers()
-    {
-        RequiredEC = 0.0;
-
-        if (buffers is null)
-            return;
-
-        using var guard = DisableUpdateResourcesOnEvent();
-
-        foreach (var buffer in buffers)
-        {
-            var resource = buffer.Resource;
-
-            if (buffer.OriginalMaxAmount is double maxAmount)
-                resource.maxAmount = maxAmount;
-            else
-                maxAmount = 0.0;
-
-            resource.maxAmount = maxAmount;
-            var extra = Math.Max(resource.amount - resource.maxAmount, 0.0);
+            var extra = resource.amount - resource.maxAmount;
             if (extra > 0.0)
             {
-                resource.amount = maxAmount;
+                resource.amount = resource.maxAmount;
 
                 var transferred = part.RequestResource(
-                    buffer.Propellant.id,
+                    resource.resourceName,
                     -extra,
-                    buffer.Propellant.GetFlowMode(),
+                    propellant.GetFlowMode(),
                     simulate: false
                 );
 
                 resource.amount += extra - Math.Abs(transferred);
             }
 
-            if (buffer.OriginalMaxAmount is null)
-                part.RemoveResource(buffer.Resource);
+            buffer.Propellant = null;
         }
 
-        buffers = null;
+        if (dead is not null)
+        {
+            foreach (var res in dead)
+                buffers.Remove(res);
+        }
+    }
+
+    private void UpdateBuffers()
+    {
+        if (!IsEnabled || Engine is null)
+        {
+            ClearBuffers();
+            return;
+        }
+
+        DisableUpdateResourcesOnEventGuard? guard = null;
+
+        try
+        {
+            double warp = TimeWarp.fixedDeltaTime;
+            if (!vessel.packed)
+                warp = 0.0;
+
+            foreach (var propellant in Engine.propellants)
+            {
+                if (!buffers.TryGetValue(propellant.name, out var buffer))
+                {
+                    var resource = part.Resources.Get(propellant.id);
+                    buffer = new Buffer()
+                    {
+                        OriginalMaxAmount = resource?.maxAmount ?? 0.0,
+                        Resource = resource,
+                    };
+                    buffers[propellant.name] = buffer;
+                }
+                else
+                {
+                    buffer.Resource ??= part.Resources[propellant.id];
+                }
+
+                if (!ReferenceEquals(buffer.Propellant, propellant))
+                {
+                    buffer.Propellant = propellant;
+                    buffer.FuelFlow = Engine.getMaxFuelFlow(propellant);
+                }
+
+                if (buffer.Resource is null)
+                {
+                    guard ??= DisableUpdateResourcesOnEvent();
+                    ConfigNode node = new("RESOURCE");
+                    node.AddValue("name", propellant.name);
+                    node.AddValue("maxAmount", 0);
+                    node.AddValue("amount", 0);
+                    node.AddValue("isVisible", false);
+
+                    buffer.Resource = part.AddResource(node);
+                }
+
+                var amount = buffer.FuelFlow * warp * Config.BufferCapacityMult;
+                buffer.Resource.maxAmount = Math.Max(amount, buffer.OriginalMaxAmount);
+            }
+        }
+        finally
+        {
+            guard?.Dispose();
+        }
     }
 
     /// <summary>
@@ -283,7 +311,35 @@ public class BackgroundEngine : PartModule
     public override void OnSave(ConfigNode node)
     {
         base.OnSave(node);
+
+        if (buffers is null)
+            return;
+
+        foreach (var (resource, buffer) in buffers)
+        {
+            var bnode = node.AddNode("BUFFER");
+            bnode.AddValue("ResourceName", resource);
+            buffer.Save(bnode);
+            buffers[resource] = buffer;
+        }
     }
+
+    public override void OnLoad(ConfigNode node)
+    {
+        base.OnLoad(node);
+
+        var bnodes = node.GetNodes("BUFFER");
+        foreach (var bnode in bnodes)
+        {
+            string resource = null;
+            if (!bnode.TryGetValue("ResourceName", ref resource))
+                continue;
+
+            Buffer buffer = new();
+            buffer.Load(bnode);
+        }
+    }
+
     #endregion
 
     #region Kerbalism Shims
