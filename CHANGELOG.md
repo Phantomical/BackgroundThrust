@@ -11,6 +11,11 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.6.3
+### Fixed
+* Fixed an `InvalidOperationException` being thrown during `BackgroundEngine`
+  OnSave.
+
 ## 0.6.2
 ### Fixed
 * Warp buffer now keeps the buffer inventories around as zero-sized part
