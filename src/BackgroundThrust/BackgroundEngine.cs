@@ -320,7 +320,6 @@ public class BackgroundEngine : PartModule
             var bnode = node.AddNode("BUFFER");
             bnode.AddValue("ResourceName", resource);
             buffer.Save(bnode);
-            buffers[resource] = buffer;
         }
     }
 
