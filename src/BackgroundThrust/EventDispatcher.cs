@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using BackgroundThrust.Heading;
-using BackgroundThrust.Utils;
 using UnityEngine;
 using static GameEvents;
 
@@ -59,6 +58,7 @@ internal class EventDispatcher : MonoBehaviour
         GameEvents.onMultiModeEngineSwitchActive.Add(OnMultiModeEngineSwitchActive);
         GameEvents.onVesselUnloaded.Add(OnVesselUnloaded);
         GameEvents.onVesselDestroy.Add(OnVesselDestroy);
+        GameEvents.onEngineThrustPercentageChanged.Add(OnEngineThrustPercentageChanged);
         Config.OnAutopilotModeChange.Add(OnVesselAutopilotModeChanged);
         Config.OnTargetHeadingProviderChanged.Add(OnTargetHeadingProviderChanged);
 
@@ -73,6 +73,7 @@ internal class EventDispatcher : MonoBehaviour
         GameEvents.onMultiModeEngineSwitchActive.Remove(OnMultiModeEngineSwitchActive);
         GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
+        GameEvents.onEngineThrustPercentageChanged.Remove(OnEngineThrustPercentageChanged);
         Config.OnAutopilotModeChange.Remove(OnVesselAutopilotModeChanged);
         Config.OnTargetHeadingProviderChanged.Remove(OnTargetHeadingProviderChanged);
     }
@@ -140,6 +141,15 @@ internal class EventDispatcher : MonoBehaviour
     {
         engines.Clear();
     }
+
+    void OnEngineThrustPercentageChanged(ModuleEngines engines)
+    {
+        var btengine = engines.part.FindModuleImplementing<BackgroundEngine>();
+        if (btengine is null)
+            return;
+
+        btengine.OnEngineThrustPercentageChanged(engines);
+    }
     #endregion
 
     #region FixedUpdate
@@ -163,6 +173,7 @@ internal class EventDispatcher : MonoBehaviour
             return;
         }
 
+        double oldMainThrottle = vessel.ctrlState.mainThrottle;
         double throttle = vessel.ctrlState.mainThrottle * 2.0 - 1.0;
 
         if (InputLockManager.IsUnlocked(ControlTypes.THROTTLE))
@@ -191,6 +202,11 @@ internal class EventDispatcher : MonoBehaviour
         }
 
         vessel.ctrlState.mainThrottle = (float)(throttle + 1.0) * 0.5f;
+
+        if (Math.Abs(vessel.ctrlState.mainThrottle - oldMainThrottle) > 1e-6)
+        {
+            Config.OnWarpThrottleChanged.Fire(new(oldMainThrottle, vessel.ctrlState.mainThrottle));
+        }
     }
     #endregion
 }

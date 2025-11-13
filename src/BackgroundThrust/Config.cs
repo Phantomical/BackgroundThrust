@@ -19,6 +19,12 @@ public static class Config
     > OnBackgroundThrottleChanged { get; } = new("onBackgroundThrottleChanged");
 
     /// <summary>
+    /// This event is emitted when the throttle changes while in timewarp.
+    /// </summary>
+    public static EventData<FromToAction<double, double>> OnWarpThrottleChanged { get; } =
+        new("onWarpThrottleChanged");
+
+    /// <summary>
     /// This event is emitted when the target heading provider on the vessel
     /// changes.
     /// </summary>

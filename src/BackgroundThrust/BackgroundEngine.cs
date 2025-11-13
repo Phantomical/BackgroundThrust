@@ -1,12 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using BackgroundThrust.Utils;
-using Smooth.Collections;
 using UnityEngine;
-using UnityEngine.AI;
-using UnityEngine.Rendering;
+using UnityEngine.PlayerLoop;
 
 namespace BackgroundThrust;
 
@@ -14,9 +11,6 @@ public class BackgroundEngine : PartModule
 {
     public MultiModeEngine MultiModeEngine { get; private set; }
     public ModuleEngines Engine { get; private set; }
-
-    [KSPField(isPersistant = true)]
-    public Vector3d Thrust;
 
     [KSPField(
         isPersistant = true,
@@ -50,6 +44,7 @@ public class BackgroundEngine : PartModule
         GameEvents.onTimeWarpRateChanged.Add(OnTimeWarpRateChanged);
         GameEvents.onVesselGoOnRails.Add(OnVesselGoOnRails);
         GameEvents.onVesselGoOffRails.Add(OnVesselGoOffRails);
+        Config.OnWarpThrottleChanged.Add(OnThrottleChanged);
 
         var isEnabled =
             state == StartState.Editor
@@ -62,6 +57,7 @@ public class BackgroundEngine : PartModule
     protected virtual void OnDestroy()
     {
         GameEvents.onTimeWarpRateChanged.Remove(OnTimeWarpRateChanged);
+        GameEvents.onVesselGoOnRails.Remove(OnVesselGoOnRails);
         GameEvents.onVesselGoOffRails.Remove(OnVesselGoOffRails);
     }
 
@@ -101,7 +97,10 @@ public class BackgroundEngine : PartModule
         OnGoOffRails();
     }
 
-    protected virtual void OnGoOnRails() { }
+    protected virtual void OnGoOnRails()
+    {
+        UpdateBuffers();
+    }
 
     protected virtual void OnGoOffRails()
     {
@@ -112,13 +111,28 @@ public class BackgroundEngine : PartModule
     {
         UpdateBuffers();
     }
+
+    void OnThrottleChanged(GameEvents.FromToAction<double, double> _)
+    {
+        if (vessel != FlightGlobals.ActiveVessel)
+            return;
+
+        UpdateBuffers();
+    }
+
+    internal void OnEngineThrustPercentageChanged(ModuleEngines engines)
+    {
+        if (engines != Engine)
+            return;
+
+        UpdateBuffers();
+    }
     #endregion
 
     #region Buffer Handling
     class Buffer : IConfigNode
     {
         public double OriginalMaxAmount;
-        public double FuelFlow;
 
         public PartResource Resource;
         public Propellant Propellant;
@@ -126,13 +140,11 @@ public class BackgroundEngine : PartModule
         public void Load(ConfigNode node)
         {
             node.TryGetValue(nameof(OriginalMaxAmount), ref OriginalMaxAmount);
-            node.TryGetValue(nameof(FuelFlow), ref FuelFlow);
         }
 
         public void Save(ConfigNode node)
         {
             node.AddValue(nameof(OriginalMaxAmount), OriginalMaxAmount);
-            node.AddValue(nameof(FuelFlow), FuelFlow);
         }
     }
 
@@ -196,6 +208,9 @@ public class BackgroundEngine : PartModule
             if (!vessel.packed)
                 warp = 0.0;
 
+            float throttle = Engine.currentThrottle;
+            float fuelFlow = Mathf.Lerp(Engine.minFuelFlow, Engine.maxFuelFlow, throttle);
+
             foreach (var propellant in Engine.propellants)
             {
                 if (!buffers.TryGetValue(propellant.name, out var buffer))
@@ -214,10 +229,7 @@ public class BackgroundEngine : PartModule
                 }
 
                 if (!ReferenceEquals(buffer.Propellant, propellant))
-                {
                     buffer.Propellant = propellant;
-                    buffer.FuelFlow = Engine.getMaxFuelFlow(propellant);
-                }
 
                 if (buffer.Resource is null)
                 {
@@ -231,7 +243,8 @@ public class BackgroundEngine : PartModule
                     buffer.Resource = part.AddResource(node);
                 }
 
-                var amount = buffer.FuelFlow * warp * Config.BufferCapacityMult;
+                float propFuelFlow = Engine.getFuelFlow(propellant, fuelFlow);
+                var amount = propFuelFlow * warp * Config.BufferCapacityMult;
                 buffer.Resource.maxAmount = Math.Max(amount, buffer.OriginalMaxAmount);
             }
         }
