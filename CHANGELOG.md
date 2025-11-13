@@ -11,6 +11,10 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.6.4
+### Fixed
+* The warp buffer for engines now scales with both throttle and time warp rate.
+
 ## 0.6.3
 ### Fixed
 * Fixed an `InvalidOperationException` being thrown during `BackgroundEngine`
