@@ -208,14 +208,23 @@ public class BackgroundThrustVessel : VesselModule
         if (!Vessel.loaded)
             return;
 
-        if (IsThrustPermitted(vessel))
+        try
         {
-            var heading = GetNewHeadingProvider();
-            if (TargetHeading is null || !heading.Equals(TargetHeading))
-                SetTargetHeading(heading, UT);
+            if (IsThrustPermitted(vessel))
+            {
+                var heading = GetNewHeadingProvider();
+                if (TargetHeading is null || !heading.Equals(TargetHeading))
+                    SetTargetHeading(heading, UT);
+            }
+            else
+            {
+                SetTargetHeading(null);
+            }
         }
-        else
+        catch (Exception e)
         {
+            LogUtil.Error("GetNewHeadingProvider threw an exception");
+            Debug.LogException(e);
             SetTargetHeading(null);
         }
     }
