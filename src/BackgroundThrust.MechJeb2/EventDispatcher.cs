@@ -10,7 +10,7 @@ internal static class EventDispatcher
     {
         try
         {
-            var vessel = ac.vessel;
+            var vessel = AccessUtils.GetComputerModuleVessel(ac);
             if (!vessel.loaded || !vessel.packed)
                 return;
 
@@ -27,7 +27,7 @@ internal static class EventDispatcher
     {
         try
         {
-            var vessel = ac.vessel;
+            var vessel = AccessUtils.GetComputerModuleVessel(ac);
             if (!vessel.loaded || !vessel.packed)
                 return;
 

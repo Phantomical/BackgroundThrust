@@ -1,3 +1,5 @@
+using System;
+using System.Reflection;
 using MuMech;
 using UnityEngine;
 
@@ -37,7 +39,7 @@ public class SmartASS : TargetHeadingProvider
         var ac = GetController();
         if (ac is not null)
         {
-            if (!ac.enabled)
+            if (!AccessUtils.GetComputerModuleEnabled(ac))
             {
                 var module = Vessel.GetBackgroundThrust();
                 module.SetTargetHeading(null);
@@ -70,7 +72,7 @@ public class SmartASS : TargetHeadingProvider
     {
         if (!Vessel.loaded)
             return null;
-        return controller ??= Vessel.GetMasterMechJeb()?.attitude;
+        return controller ??= AccessUtils.GetAttitudeController(Vessel.GetMasterMechJeb());
     }
 
     Quaternion GetReferenceRotation()

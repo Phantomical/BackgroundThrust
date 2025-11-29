@@ -3,10 +3,7 @@ using MuMech;
 
 namespace BackgroundThrust.MechJeb2.Patches;
 
-[HarmonyPatch(
-    typeof(MechJebModuleAttitudeController),
-    nameof(MechJebModuleAttitudeController.OnModuleEnabled)
-)]
+[HarmonyPatch(typeof(MechJebModuleAttitudeController), "OnModuleEnabled")]
 internal static class MechJebModuleAttitudeController_OnModuleEnabled_Patch
 {
     static void Postfix(MechJebModuleAttitudeController __instance)
@@ -15,10 +12,7 @@ internal static class MechJebModuleAttitudeController_OnModuleEnabled_Patch
     }
 }
 
-[HarmonyPatch(
-    typeof(MechJebModuleAttitudeController),
-    nameof(MechJebModuleAttitudeController.OnModuleDisabled)
-)]
+[HarmonyPatch(typeof(MechJebModuleAttitudeController), "OnModuleDisabled")]
 internal static class MechJebModuleAttitudeController_OnModuleDisabled_Patch
 {
     static void Postfix(MechJebModuleAttitudeController __instance)

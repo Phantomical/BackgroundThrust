@@ -11,8 +11,8 @@ public class MechJebCurrentHeadingProvider : ICurrentHeadingProvider
         if (mechJeb == null)
             return null;
 
-        var attitude = mechJeb.attitude;
-        if (!attitude.enabled)
+        var attitude = AccessUtils.GetAttitudeController(mechJeb);
+        if (!AccessUtils.GetComputerModuleEnabled(attitude))
             return null;
 
         return new SmartASS();
