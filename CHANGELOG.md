@@ -15,6 +15,11 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 ### Fixed
 * Fixed compatibility issues with the new MechJeb2 release. BackgroundThrust
   is now compatible with both MechJeb 2.14.3 and 2.15.
+* Avoid updating the vessel heading if the throttle is non-zero but the overall
+  thrust is zero.
+* Avoid a nullref in OnSave if the mechjeb attitude controller is null.
+* Guard against future bugs when creating a target heading provider causing
+  OnSave to throw an exception.
 
 ## 0.6.4
 ### Fixed
