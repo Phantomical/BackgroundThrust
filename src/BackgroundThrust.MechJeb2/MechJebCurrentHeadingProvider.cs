@@ -6,12 +6,13 @@ public class MechJebCurrentHeadingProvider : ICurrentHeadingProvider
 {
     public TargetHeadingProvider GetCurrentHeading(BackgroundThrustVessel module)
     {
-        var vessel = module.Vessel;
-        var mechJeb = vessel.GetMasterMechJeb();
+        var mechJeb = module.Vessel.GetMasterMechJeb();
         if (mechJeb == null)
             return null;
 
         var attitude = AccessUtils.GetAttitudeController(mechJeb);
+        if (attitude is null)
+            return null;
         if (!AccessUtils.GetComputerModuleEnabled(attitude))
             return null;
 
