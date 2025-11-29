@@ -11,6 +11,11 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.6.5
+### Fixed
+* Fixed compatibility issues with the new MechJeb2 release. BackgroundThrust
+  is now compatible with both MechJeb 2.14.3 and 2.15.
+
 ## 0.6.4
 ### Fixed
 * The warp buffer for engines now scales with both throttle and time warp rate.
