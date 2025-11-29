@@ -271,7 +271,7 @@ public class BackgroundThrustVessel : VesselModule
             return;
         }
 
-        if (Thrust == Vector3d.zero && Throttle == 0.0)
+        if (Thrust == Vector3d.zero)
             return;
 
         var parameters = new ThrustParameters
