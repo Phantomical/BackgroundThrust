@@ -11,6 +11,7 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+## 0.6.6
 ### Fixed
 * Fixed an incompatibility due to different types between MechJeb 2.14.3 and 2.15.
 
