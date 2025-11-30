@@ -1,8 +1,9 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using HarmonyLib;
 using MuMech;
-using UnityEngine.UIElements;
+using UnityEngine;
 
 namespace BackgroundThrust.MechJeb2;
 
@@ -24,6 +25,9 @@ internal static class AccessUtils
         "Enabled" // >= 2.15
     );
 
+    static readonly Func<MechJebModuleAttitudeController, Quaternion> ControllerTargetAttitudeFunc =
+        MakeTargetAttitudeFunc();
+
     static readonly Func<ComputerModule, Vessel> ComputerModuleVesselFunc =
         MakeMultiAttemptAccessor<ComputerModule, Vessel>(
             "vessel", // <= 2.14.3
@@ -37,6 +41,10 @@ internal static class AccessUtils
 
         return AttitudeControllerFunc(mechjeb);
     }
+
+    public static Quaternion GetControllerAttitudeTarget(
+        MechJebModuleAttitudeController controller
+    ) => ControllerTargetAttitudeFunc(controller);
 
     public static bool GetComputerModuleEnabled(ComputerModule module) =>
         ComputerModuleEnabledFunc(module);
@@ -75,6 +83,31 @@ internal static class AccessUtils
         );
 
         return lambda.Compile();
+    }
+
+    static Quaternion ConvertQuaternionD(QuaternionD quat) => quat;
+
+    static Func<MechJebModuleAttitudeController, Quaternion> MakeTargetAttitudeFunc()
+    {
+        var property = typeof(MechJebModuleAttitudeController).GetProperty(
+            nameof(MechJebModuleAttitudeController.attitudeTarget)
+        );
+
+        var param = Expression.Parameter(typeof(MechJebModuleAttitudeController));
+        Expression target = Expression.MakeMemberAccess(param, property);
+
+        if (target.Type == typeof(QuaternionD))
+        {
+            target = Expression.Call(
+                null,
+                SymbolExtensions.GetMethodInfo(() => ConvertQuaternionD(default)),
+                target
+            );
+        }
+
+        return Expression
+            .Lambda<Func<MechJebModuleAttitudeController, Quaternion>>(target, [param])
+            .Compile();
     }
 
     static MemberInfo GetFieldOrProperty(Type type, string name) =>

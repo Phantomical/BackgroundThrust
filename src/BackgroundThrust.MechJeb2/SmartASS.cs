@@ -46,7 +46,7 @@ public class SmartASS : TargetHeadingProvider
             }
 
             Attitude = ac.attitudeReference;
-            AttitudeTarget = ac.attitudeTarget;
+            AttitudeTarget = AccessUtils.GetControllerAttitudeTarget(ac);
         }
 
         var target = GetReferenceRotation() * AttitudeTarget * FrameShift;
@@ -59,7 +59,7 @@ public class SmartASS : TargetHeadingProvider
         if (ac is not null)
         {
             Attitude = ac.attitudeReference;
-            AttitudeTarget = ac.attitudeTarget;
+            AttitudeTarget = AccessUtils.GetControllerAttitudeTarget(ac);
         }
     }
 
