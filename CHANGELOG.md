@@ -11,6 +11,8 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+
+## 0.6.7
 ## Fixed
 * Fixed a bug where empty SRBs would occasionally keep running in the background.
 * Fixed logspam due to missing simulation resources.
