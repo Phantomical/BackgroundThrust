@@ -47,10 +47,7 @@ internal class Loader : MonoBehaviour
             return;
         }
 
-        var plugin = Path.Combine(
-            GetPluginDirectory(),
-            "BackgroundThrust.Kerbalism.dll"
-        );
+        var plugin = Path.Combine(GetPluginDirectory(), "BackgroundThrust.Kerbalism.dll");
 
         AssemblyLoader.LoadedAssembly loaded;
         try
