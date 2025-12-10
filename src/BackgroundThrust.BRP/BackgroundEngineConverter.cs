@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using BackgroundResourceProcessing;
 using BackgroundResourceProcessing.Converter;
+using UnityEngine.UI;
 
 namespace BackgroundThrust.BRP;
 
@@ -31,19 +32,29 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
 
         var inputs = new List<ResourceRatio>(engine.propellants.Count);
         var outputs = new List<ResourceRatio>();
+        var totalFuelFlow = 0.0;
 
         foreach (var propellant in engine.propellants)
         {
-            inputs.Add(
-                new()
-                {
-                    ResourceName = propellant.resourceDef.name,
-                    Ratio = engine.getMaxFuelFlow(propellant),
-                    FlowMode = propellant.GetFlowMode(),
-                    DumpExcess = false,
-                }
-            );
+            var input = new ResourceRatio()
+            {
+                ResourceName = propellant.resourceDef.name,
+                Ratio = engine.getMaxFuelFlow(propellant),
+                FlowMode = propellant.GetFlowMode(),
+                DumpExcess = false,
+            };
+
+            totalFuelFlow += input.Ratio;
+            inputs.Add(input);
         }
+
+        // We don't handle cases where the engine consumes no fuel, since that
+        // would mean it would keep going forever.
+        //
+        // This pops up when there are SRBs with a wind-down, where they are
+        // still technically running, but have no fuel.
+        if (totalFuelFlow == 0.0)
+            return null;
 
         var alternators = module.part.FindModulesImplementing<ModuleAlternator>();
         foreach (var alternator in alternators)
