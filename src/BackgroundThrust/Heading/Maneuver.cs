@@ -57,8 +57,15 @@ public class Maneuver : TargetHeadingProvider, ISASHeading
             if (Vessel != FlightGlobals.ActiveVessel)
                 return;
 
-            var remaining = endDeltaV.magnitude;
-            var estimateUT = parameters.GetUTAtDeltaV(deltaV.magnitude + remaining);
+            var start = startDeltaV.magnitude;
+            var end = endDeltaV.magnitude;
+
+            // If our delta-V is increasing then there is no need to worry about
+            // reducing the warp rate.
+            if (end >= start)
+                return;
+
+            var estimateUT = parameters.GetUTAtDeltaV(start);
             var remainingT = Math.Max(estimateUT - parameters.StartUT, 0.0);
 
             SetTargetWarpRate(remainingT);
