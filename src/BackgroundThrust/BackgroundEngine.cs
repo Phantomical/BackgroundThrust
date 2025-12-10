@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using BackgroundThrust.Utils;
+using Expansions.Missions.Editor;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 
@@ -234,13 +235,28 @@ public class BackgroundEngine : PartModule
                 if (buffer.Resource is null)
                 {
                     guard ??= DisableUpdateResourcesOnEvent();
-                    ConfigNode node = new("RESOURCE");
-                    node.AddValue("name", propellant.name);
-                    node.AddValue("maxAmount", 0);
-                    node.AddValue("amount", 0);
-                    node.AddValue("isVisible", false);
 
-                    buffer.Resource = part.AddResource(node);
+                    var resource = new PartResource(part);
+                    resource.SetInfo(propellant.resourceDef);
+                    resource.isVisible = false;
+                    resource.flowState = true;
+                    resource.hideFlow = false;
+
+                    part.Resources.dict.Add(propellant.id, resource);
+                    buffer.Resource = resource;
+
+                    if (part.SimulationResources is not null)
+                    {
+                        var simulationResource = new PartResource(resource)
+                        {
+                            simulationResource = true,
+                        };
+                        part.SimulationResources?.dict.Add(propellant.id, simulationResource);
+                    }
+
+                    // This property calls some code using SimulationResource in its setter.
+                    // This means it needs to be set after simulationResource is registered to avoid logspam.
+                    resource.flowMode = PartResource.FlowMode.Both;
                 }
 
                 float propFuelFlow = Engine.getFuelFlow(propellant, fuelFlow);
