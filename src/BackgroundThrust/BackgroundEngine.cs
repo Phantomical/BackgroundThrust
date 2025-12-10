@@ -262,6 +262,12 @@ public class BackgroundEngine : PartModule
                 float propFuelFlow = Engine.getFuelFlow(propellant, fuelFlow);
                 var amount = propFuelFlow * warp * Config.BufferCapacityMult;
                 buffer.Resource.maxAmount = Math.Max(amount, buffer.OriginalMaxAmount);
+
+                if (
+                    part.SimulationResources?.dict.TryGetValue(propellant.id, out var simResource)
+                    ?? false
+                )
+                    simResource.maxAmount = buffer.Resource.maxAmount;
             }
         }
         finally
