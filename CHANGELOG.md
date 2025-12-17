@@ -11,9 +11,11 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+### Fixed
+* Fixed a bug where SAS would be disabled when coming out of warp.
 
 ## 0.6.7
-## Fixed
+### Fixed
 * Fixed a bug where empty SRBs would occasionally keep running in the background.
 * Fixed logspam due to missing simulation resources.
 * Simplify the code that slows down time warps when executing maneuver nodes.

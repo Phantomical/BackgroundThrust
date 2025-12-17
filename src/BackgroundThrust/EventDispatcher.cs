@@ -117,16 +117,21 @@ internal class EventDispatcher : MonoBehaviour
             return;
 
         var autopilot = vessel.Autopilot;
-        var to = evt.to as ISASHeading;
-        if (to is not null)
+        if (evt.to is ISASHeading to)
         {
             var mode = to.Mode;
 
             if (autopilot.Mode != mode)
                 autopilot.SetMode(mode);
         }
-        else if (autopilot.Enabled)
+        else if (!vessel.packed)
+        {
+            // do nothing, preserve SAS state when coming out of warp.
+        }
+        else
+        {
             autopilot.Disable();
+        }
     }
 
     void OnVesselDestroy(Vessel vessel)
