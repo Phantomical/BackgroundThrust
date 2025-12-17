@@ -11,6 +11,8 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+
+## 0.6.8
 ### Fixed
 * Fixed a bug where SAS would be disabled when coming out of warp.
 
