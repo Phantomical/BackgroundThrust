@@ -60,7 +60,6 @@ internal class EventDispatcher : MonoBehaviour
         GameEvents.onVesselDestroy.Add(OnVesselDestroy);
         GameEvents.onEngineThrustPercentageChanged.Add(OnEngineThrustPercentageChanged);
         Config.OnAutopilotModeChange.Add(OnVesselAutopilotModeChanged);
-        Config.OnTargetHeadingProviderChanged.Add(OnTargetHeadingProviderChanged);
 
         Instance = this;
     }
@@ -75,7 +74,6 @@ internal class EventDispatcher : MonoBehaviour
         GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
         GameEvents.onEngineThrustPercentageChanged.Remove(OnEngineThrustPercentageChanged);
         Config.OnAutopilotModeChange.Remove(OnVesselAutopilotModeChanged);
-        Config.OnTargetHeadingProviderChanged.Remove(OnTargetHeadingProviderChanged);
     }
 
     void OnVesselPartCountChanged(Vessel vessel)
@@ -108,6 +106,11 @@ internal class EventDispatcher : MonoBehaviour
         module.OnMultiModeEngineSwitchActive();
     }
 
+#if false
+    // Generally the SAS mode gets set by the user. Having it also get synced
+    // in the reverse direction has caused several issues. This method is kept
+    // in case we want to do this again in the future, but it is disabled for
+    // now.
     void OnTargetHeadingProviderChanged(
         HostedFromToAction<BackgroundThrustVessel, TargetHeadingProvider> evt
     )
@@ -133,6 +136,7 @@ internal class EventDispatcher : MonoBehaviour
             autopilot.Disable();
         }
     }
+#endif
 
     void OnVesselDestroy(Vessel vessel)
     {
