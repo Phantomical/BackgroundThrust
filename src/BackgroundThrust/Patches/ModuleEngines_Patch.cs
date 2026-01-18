@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Reflection.Emit;
 using HarmonyLib;
 
 namespace BackgroundThrust.Patches;
@@ -35,5 +37,35 @@ internal static class ModuleEngines_TimeWarping_Patch
     {
         return part.packed
             || (TimeWarp.CurrentRate > 1f && TimeWarp.WarpMode == TimeWarp.Modes.HIGH);
+    }
+}
+
+[HarmonyPatch(typeof(ModuleEngines), "ThrustUpdate")]
+internal static class ModuleEngines_ThrustUpdate_Patch
+{
+    static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        var original = SymbolExtensions.GetMethodInfo<Part>(p => p.AddThermalFlux(0.0));
+        var replacement = SymbolExtensions.GetMethodInfo<Part>(p =>
+            AddThermalFluxAtLowWarp(p, 0.0)
+        );
+
+        var matcher = new CodeMatcher(instructions);
+
+        matcher
+            .MatchStartForward(new CodeMatch(OpCodes.Callvirt, original))
+            .ThrowIfInvalid("Unable to find call to Part.AddThermalFlux")
+            .SetInstruction(new CodeInstruction(OpCodes.Call, replacement));
+
+        return matcher.Instructions();
+    }
+
+    static void AddThermalFluxAtLowWarp(Part part, double kilowatts)
+    {
+        // Avoid adding heat when the simulation has switched to analytical mode.
+        if (TimeWarp.CurrentRate > PhysicsGlobals.ThermalMaxIntegrationWarp)
+            return;
+
+        part.AddThermalFlux(kilowatts);
     }
 }
