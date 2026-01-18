@@ -12,6 +12,11 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 
 ## Unreleased
 
+## 0.6.9
+### Fixed
+* Disable heat production for engines when KSP uses the analytical heat mode.
+* BackgroundThrust will no longer change the current SAS mode in any way.
+
 ## 0.6.8
 ### Fixed
 * Fixed a bug where SAS would be disabled when coming out of warp.
