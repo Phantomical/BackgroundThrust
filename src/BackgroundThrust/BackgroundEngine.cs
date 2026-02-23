@@ -2,9 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using BackgroundThrust.Utils;
-using Expansions.Missions.Editor;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 
 namespace BackgroundThrust;
 
@@ -60,6 +58,7 @@ public class BackgroundEngine : PartModule
         GameEvents.onTimeWarpRateChanged.Remove(OnTimeWarpRateChanged);
         GameEvents.onVesselGoOnRails.Remove(OnVesselGoOnRails);
         GameEvents.onVesselGoOffRails.Remove(OnVesselGoOffRails);
+        Config.OnWarpThrottleChanged.Remove(OnThrottleChanged);
     }
 
     internal void OnMultiModeEngineSwitchActive()
