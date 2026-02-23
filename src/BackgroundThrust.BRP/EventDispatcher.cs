@@ -85,6 +85,7 @@ public class EventDispatcher : MonoBehaviour
 
     void Start()
     {
+        BackgroundResourceProcessor.onVesselRecord.Add(OnVesselRecord);
         BackgroundResourceProcessor.onVesselChangepoint.Add(OnVesselChangepoint);
         Config.OnBackgroundThrottleChanged.Add(OnBackgroundThrottleChanged);
         Config.OnTargetHeadingProviderChanged.Add(OnHeadingChanged);
@@ -93,12 +94,19 @@ public class EventDispatcher : MonoBehaviour
 
     void OnDestroy()
     {
+        BackgroundResourceProcessor.onVesselRecord.Remove(OnVesselRecord);
         BackgroundResourceProcessor.onVesselChangepoint.Remove(OnVesselChangepoint);
         Config.OnBackgroundThrottleChanged.Remove(OnBackgroundThrottleChanged);
         Config.OnTargetHeadingProviderChanged.Remove(OnHeadingChanged);
         GameEvents.onVesselDestroy.Remove(OnVesselDestroy);
 
         Instance = null;
+    }
+
+    void OnVesselRecord(BackgroundResourceProcessor processor)
+    {
+        var module = GetVesselModule(processor.Vessel);
+        module.RefreshTargetHeading();
     }
 
     void OnVesselChangepoint(BackgroundResourceProcessor processor, ChangepointEvent evt)
