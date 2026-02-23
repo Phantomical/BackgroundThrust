@@ -12,6 +12,17 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 
 ## Unreleased
 
+## 0.6.10
+### Added
+* Added some new patches to properly allow switching scenes while under thrust.
+
+### Fixed
+* Fixed a memory leak in the BackgroundEngine module.
+* BackgroundThrustVessel modules now properly disable themselves when they are
+  not being used.
+* Fixed a bunch of issues that would cause thrust in the background with BRP to
+  not work.
+
 ## 0.6.9
 ### Fixed
 * Disable heat production for engines when KSP uses the analytical heat mode.
