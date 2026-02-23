@@ -9,6 +9,8 @@ namespace BackgroundThrust;
 
 public class BackgroundThrustVessel : VesselModule
 {
+    private bool RequestActive = true;
+
     /// <summary>
     /// The UT at which an update last occurred.
     /// </summary>
@@ -108,7 +110,7 @@ public class BackgroundThrustVessel : VesselModule
 
     void FixedUpdate()
     {
-        if (!FlightGlobals.ready)
+        if (!FlightGlobals.ready && HighLogic.LoadedSceneIsFlight)
             return;
 
         if (!vessel.loaded)
@@ -142,7 +144,7 @@ public class BackgroundThrustVessel : VesselModule
                 LastUpdateTime = Math.Max(LastUpdateTime, UT);
 
             if (!nowZero && TargetHeading is not null)
-                enabled = true;
+                RequestActive = true;
 
             var prev = this.throttle;
             this.throttle = throttle;
@@ -161,7 +163,7 @@ public class BackgroundThrustVessel : VesselModule
             LastUpdateTime = Math.Max(LastUpdateTime, UT);
 
         if (heading is not null)
-            enabled = true;
+            RequestActive = true;
 
         LastHeading = default;
 
@@ -367,7 +369,7 @@ public class BackgroundThrustVessel : VesselModule
         {
             // If we aren't set up to run any updates then we disable ourselves
             // to avoid extra overhead.
-            enabled = false;
+            RequestActive = false;
             return;
         }
 
@@ -438,9 +440,9 @@ public class BackgroundThrustVessel : VesselModule
                 // with an independent throttle but if we don't do this then
                 // we can potentially end up background vessels running extra
                 // FixedUpdates unecessarily.
-                enabled = false;
+                RequestActive = false;
             else if (provider.DisableOnZeroThrust)
-                enabled = false;
+                RequestActive = false;
             return;
         }
 
@@ -519,6 +521,17 @@ public class BackgroundThrustVessel : VesselModule
             // Make sure that the vessel is pointing in the target direction.
             vessel.SetRotation(target.Orientation);
         }
+    }
+
+    public override bool ShouldBeActive()
+    {
+        if (!HighLogic.LoadedSceneIsGame || HighLogic.LoadedSceneIsEditor)
+            return false;
+
+        if (Vessel.loaded)
+            return true;
+
+        return RequestActive;
     }
 
     // OnVesselPack is emitted after ctrlState.Neutralize(), so it can be used
