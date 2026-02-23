@@ -25,6 +25,9 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
             return null;
 
         var engine = module.Engine;
+        if (!engine.isOperational)
+            return null;
+
         double? throttle = null;
         if (engine.independentThrottle)
             throttle = engine.independentThrottlePercentage * 0.01;
