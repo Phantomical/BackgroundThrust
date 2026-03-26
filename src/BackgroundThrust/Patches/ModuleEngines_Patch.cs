@@ -4,12 +4,34 @@ using HarmonyLib;
 
 namespace BackgroundThrust.Patches;
 
+/// <summary>
+/// When BackgroundThrust forces an engine to run during warp, the stock
+/// <c>ModuleEngines.FixedUpdate</c> calls <c>UpdatePropellantStatus(doGauge: true)</c>,
+/// which calls <c>UpdatePropellantGauge</c>. That method accesses <c>part.stackIcon</c>
+/// without a null check. During scene loading and shortly after unpacking,
+/// the staging UI hasn't been created yet so <c>stackIcon</c> is null, causing
+/// a NullReferenceException that aborts <c>FixedUpdate</c> before
+/// <c>ThrustUpdate</c> can run — making the engine produce no thrust.
+/// </summary>
+[HarmonyPatch(typeof(ModuleEngines), "UpdatePropellantStatus")]
+internal static class ModuleEngines_UpdatePropellantStatus_Patch
+{
+    static void Prefix(ModuleEngines __instance, ref bool doGauge)
+    {
+        if (doGauge && __instance.part.stackIcon == null)
+            doGauge = false;
+    }
+}
+
 [HarmonyPatch(typeof(ModuleEngines), "TimeWarping")]
 internal static class ModuleEngines_TimeWarping_Patch
 {
     static bool Prefix(ModuleEngines __instance, ref bool __result)
     {
         if (!HighLogic.LoadedSceneIsFlight)
+            return true;
+
+        if (!FlightGlobals.ready)
             return true;
 
         var part = __instance.part;

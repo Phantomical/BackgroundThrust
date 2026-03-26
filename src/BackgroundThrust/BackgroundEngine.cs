@@ -172,14 +172,17 @@ public class BackgroundEngine : PartModule
             {
                 resource.amount = resource.maxAmount;
 
-                var transferred = part.RequestResource(
-                    resource.resourceName,
-                    -extra,
-                    propellant.GetFlowMode(),
-                    simulate: false
-                );
+                if (propellant is not null)
+                {
+                    var transferred = part.RequestResource(
+                        resource.resourceName,
+                        -extra,
+                        propellant.GetFlowMode(),
+                        simulate: false
+                    );
 
-                resource.amount += extra - Math.Abs(transferred);
+                    resource.amount += extra - Math.Abs(transferred);
+                }
             }
 
             buffer.Propellant = null;
