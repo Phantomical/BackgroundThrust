@@ -73,7 +73,7 @@ public struct ThrustParameters
         var deltaM = DeltaM;
         if (Math.Abs(deltaM) < 1e-6)
         {
-            return dv * StartMass / thrust;
+             return StartUT + dv * StartMass / thrust;
         }
         else
         {
