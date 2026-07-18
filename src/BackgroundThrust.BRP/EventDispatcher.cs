@@ -41,7 +41,12 @@ public class EventDispatcher : MonoBehaviour
         {
             if (converter.Behaviour is not BackgroundEngineBehaviour engine)
                 continue;
-            thrust += engine.MaxThrust * (engine.Throttle ?? throttle) * converter.Rate;
+
+            // Stock thrust scales with the same lerped fuel-flow fraction
+            // (see ModuleEngines.GetEngineThrust), so thrust and fuel
+            // consumption stay consistent.
+            var fraction = engine.GetFlowFraction(engine.Throttle ?? throttle);
+            thrust += engine.MaxThrust * fraction * converter.Rate;
         }
 
         info = new()

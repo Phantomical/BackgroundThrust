@@ -38,10 +38,15 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
             throttle = engine.independentThrottlePercentage * 0.01;
 
         // ModuleEngines.UpdateThrottle folds the thrust limiter into the
-        // requested throttle, so it scales both thrust and fuel flow. Bake it
-        // in here since we never see currentThrottle while unloaded.
+        // requested throttle, and the fuel flow then lerps from minFuelFlow
+        // to maxFuelFlow. Both have to combine inside the lerp, so hand them
+        // to the behaviour instead of baking them into the ratios.
         var limiter = engine.thrustPercentage * 0.01;
-        var maxThrust = engine.maxThrust * limiter;
+        var minFlowFraction =
+            engine.maxFuelFlow > 0f
+                ? UtilMath.Clamp01(engine.minFuelFlow / engine.maxFuelFlow)
+                : 0.0;
+        var maxThrust = engine.maxThrust;
 
         var inputs = new List<ResourceRatio>(engine.propellants.Count);
         var outputs = new List<ResourceRatio>();
@@ -52,7 +57,7 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
             var input = new ResourceRatio()
             {
                 ResourceName = propellant.resourceDef.name,
-                Ratio = engine.getMaxFuelFlow(propellant) * limiter,
+                Ratio = engine.getMaxFuelFlow(propellant),
                 FlowMode = propellant.GetFlowMode(),
                 DumpExcess = false,
             };
@@ -119,6 +124,8 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
             {
                 MaxThrust = maxThrust,
                 Throttle = throttle,
+                ThrustLimiter = limiter,
+                MinFlowFraction = minFlowFraction,
             }
         );
     }
