@@ -157,7 +157,11 @@ public class BackgroundEngine : PartModule
         foreach (var (resourceName, buffer) in buffers)
         {
             var propellant = buffer.Propellant;
-            var resource = buffer.Resource;
+
+            // A buffer that was just loaded from a save has not been
+            // reconnected to its part resource yet. Reconnect it here so
+            // that the original tank capacity can still be restored.
+            var resource = buffer.Resource ??= part.Resources.Get(resourceName);
             if (resource is null)
             {
                 dead ??= [];
@@ -172,10 +176,15 @@ public class BackgroundEngine : PartModule
             {
                 resource.amount = resource.maxAmount;
 
+                // A reconnected buffer has no propellant; fall back to the
+                // resource's default flow mode like Propellant.GetFlowMode does.
+                var flowMode =
+                    propellant?.GetFlowMode()
+                    ?? PartResourceLibrary.GetDefaultFlowMode(resource.info.id);
                 var transferred = part.RequestResource(
                     resource.resourceName,
                     -extra,
-                    propellant.GetFlowMode(),
+                    flowMode,
                     simulate: false
                 );
 
@@ -225,7 +234,9 @@ public class BackgroundEngine : PartModule
                 }
                 else
                 {
-                    buffer.Resource ??= part.Resources[propellant.id];
+                    // Note: PartResourceList's int indexer is positional,
+                    // Get is the lookup by resource id.
+                    buffer.Resource ??= part.Resources.Get(propellant.id);
                 }
 
                 if (!ReferenceEquals(buffer.Propellant, propellant))
