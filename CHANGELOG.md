@@ -12,6 +12,28 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 
 ## Unreleased
 
+## 0.6.11
+### Added
+* You can now toggle SAS while in time warp.
+
+### Fixed
+* Fixed an issue where the calculated remaining burn time was calculated to
+  be 0 when in low thrust or no-mass-change conditions. Thanks to Jaheay on
+  github for the fix PR.
+* Background thrust for unloaded ships now actually uses teh rocket equation
+  to calculate delta-v instead of wrongly assuming the mass stays constant.
+* Vessel flip protection now uses the thrust axis, instead of the forward axis.
+* Fixed a NRE if a maneuver node is deleted while using the maneuver targeting
+  mode.
+* Fixed a bug where saving during thrust could permanently increase the size of
+  resource buffer tanks.
+* Fixed a bunch of bugs related to using MechJeb2 SmartASS targeting modes in
+  time warp.
+* Ullage for RealFuels' engines in time warp now includes thrust in the correct
+  axis, not a rotated one.
+* Background engines now respect the thrust limiter and throttle locking.
+* Fixed a couple of issues with kerbalism, though it is still untested.
+
 ## 0.6.10
 ### Added
 * Added some new patches to properly allow switching scenes while under thrust.
