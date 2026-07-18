@@ -102,7 +102,7 @@ public class Maneuver : TargetHeadingProvider, ISASHeading
 
         for (int index = rateIdx - 1; index > minOnRailsIndex; index -= 1)
         {
-            var rate = timeWarp.warpRates[index - minOnRailsIndex];
+            var rate = timeWarp.warpRates[index];
             if (rate < remaining * 0.1)
             {
                 TimeWarp.SetRate(index, instant);
