@@ -20,7 +20,7 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 * Fixed an issue where the calculated remaining burn time was calculated to
   be 0 when in low thrust or no-mass-change conditions. Thanks to Jaheay on
   github for the fix PR.
-* Background thrust for unloaded ships now actually uses teh rocket equation
+* Background thrust for unloaded ships now actually uses the rocket equation
   to calculate delta-v instead of wrongly assuming the mass stays constant.
 * Vessel flip protection now uses the thrust axis, instead of the forward axis.
 * Fixed a NRE if a maneuver node is deleted while using the maneuver targeting
