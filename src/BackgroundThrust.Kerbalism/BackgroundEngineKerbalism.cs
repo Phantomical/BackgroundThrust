@@ -34,6 +34,10 @@ internal class BackgroundEngineKerbalism
         var engine = module.Engine;
         if (engine is null)
             return;
+        // Mirrors the BRP converter: a shutdown or flamed-out engine produces
+        // no thrust in the background, even if its throttle is locked.
+        if (!engine.isOperational)
+            return;
         if (!module.IsEnabled || !module.AllowBackgroundProcessing)
             return;
         if (!BackgroundThrustVessel.IsThrustPermitted(module.vessel))
