@@ -43,6 +43,26 @@ internal class BackgroundEngineKerbalism
         if (!BackgroundThrustVessel.IsThrustPermitted(module.vessel))
             return;
 
+        var propellants = new List<PropellantInfo>();
+        var totalFuelFlow = 0.0;
+        foreach (var propellant in engine.propellants)
+        {
+            var info = new PropellantInfo()
+            {
+                ResourceName = propellant.resourceDef.name,
+                Rate = engine.getMaxFuelFlow(propellant),
+            };
+
+            totalFuelFlow += info.Rate;
+            propellants.Add(info);
+        }
+
+        // We don't handle engines that consume no fuel, since those would keep
+        // thrusting forever. This pops up for SRBs with a wind-down, where they
+        // are still technically running but have no fuel.
+        if (totalFuelFlow == 0.0)
+            return;
+
         // Mirrors the branch order in ModuleEngines.UpdateThrottle: a locked
         // throttle runs at the limiter and ignores both the independent and the
         // vessel throttle. An absent Throttle key falls back to the vessel's.
@@ -64,16 +84,8 @@ internal class BackgroundEngineKerbalism
         );
         node.AddValue("Thrust", engine.maxThrust);
 
-        foreach (var propellant in engine.propellants)
-        {
-            var info = new PropellantInfo()
-            {
-                ResourceName = propellant.resourceDef.name,
-                Rate = engine.getMaxFuelFlow(propellant),
-            };
-
+        foreach (var info in propellants)
             info.Save(node.AddNode("PROPELLANT"));
-        }
     }
 
     #region Kerbalism Background Update
@@ -134,15 +146,39 @@ internal class BackgroundEngineKerbalism
         var fraction =
             minFlowFraction + (1.0 - minFlowFraction) * (UtilMath.Clamp01(throttle) * limiter);
 
+        var propellants = new List<PropellantInfo>();
+        foreach (var propNode in node.GetNodes("PROPELLANT"))
+            propellants.Add(new PropellantInfo(propNode));
+
+        // Kerbalism applies each change request independently, so producing
+        // thrust does not require the propellant consumption to succeed. Scale
+        // everything by the fraction of the requested burn that the vessel's
+        // tanks can actually supply over this window, so that thrust stops
+        // when the propellant runs out.
+        //
+        // Note that availableResources is a snapshot from the start of the
+        // update, so concurrent consumers can still jointly overdraw a little.
+        var burnable = 1.0;
+        foreach (var propellant in propellants)
+        {
+            var needed = propellant.Rate * fraction * elapsed_s;
+            if (needed <= 0.0)
+                continue;
+
+            availableResources.TryGetValue(propellant.ResourceName, out var available);
+            burnable = Math.Min(burnable, Math.Max(available, 0.0) / needed);
+        }
+
+        var rate = fraction * burnable;
+        if (rate <= 0.0)
+            return KerbalismToolTipName;
+
         resourceChangeRequest.Add(
-            new(KerbalismVesselInfoProvider.ThrustResourceName, thrust * fraction)
+            new(KerbalismVesselInfoProvider.ThrustResourceName, thrust * rate)
         );
 
-        foreach (var propNode in node.GetNodes("PROPELLANT"))
-        {
-            var propellant = new PropellantInfo(propNode);
-            resourceChangeRequest.Add(new(propellant.ResourceName, -propellant.Rate * fraction));
-        }
+        foreach (var propellant in propellants)
+            resourceChangeRequest.Add(new(propellant.ResourceName, -propellant.Rate * rate));
 
         return KerbalismToolTipName;
     }
