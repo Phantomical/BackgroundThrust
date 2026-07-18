@@ -12,7 +12,9 @@ internal static class TimeWarp_SetRate_Patch
         ILGenerator gen
     )
     {
-        const ControlTypes THROTTLE_MASK = ~(ControlTypes.THROTTLE | ControlTypes.THROTTLE_CUT_MAX);
+        const ControlTypes THROTTLE_MASK = ~(
+            ControlTypes.THROTTLE | ControlTypes.THROTTLE_CUT_MAX | ControlTypes.SAS
+        );
 
         var setControlLockMethod = SymbolExtensions.GetMethodInfo(() =>
             InputLockManager.SetControlLock(ControlTypes.None, "")
