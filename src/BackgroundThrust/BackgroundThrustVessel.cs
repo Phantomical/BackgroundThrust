@@ -324,8 +324,9 @@ public class BackgroundThrustVessel : VesselModule
 
         if (lastHeading is Quaternion heading)
         {
-            var v1 = heading * Vector3.forward;
-            var v2 = target.Orientation * Vector3.forward;
+            // The thrust axis is the reference transform's up axis.
+            var v1 = heading * Vector3.up;
+            var v2 = target.Orientation * Vector3.up;
 
             if (Vector3.Dot(v1, v2) < 0)
             {
