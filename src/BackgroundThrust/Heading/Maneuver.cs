@@ -43,6 +43,24 @@ public class Maneuver : TargetHeadingProvider, ISASHeading
         }
 
         var node = Node;
+        if (node is null)
+        {
+            // The node was deleted mid-burn. The fuel for this interval has
+            // already been consumed, so the delta-V still gets applied.
+            Vessel.orbit.Perturb(deltaV, parameters.StopUT);
+
+            module.SetThrottle(0.0);
+            module.SetTargetHeading(null);
+
+            // We only display screen messages for the active vessel.
+            if (Vessel != FlightGlobals.ActiveVessel)
+                return;
+
+            ScreenMessages.PostScreenMessage("Maneuver node removed. Cutting thrust.");
+            TimeWarp.SetRate(0, instant: true);
+            return;
+        }
+
         var startDeltaV = node.GetBurnVector(Vessel.orbit);
 
         Vessel.orbit.Perturb(deltaV, parameters.StopUT);
