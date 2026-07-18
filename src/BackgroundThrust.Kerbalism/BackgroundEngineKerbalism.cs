@@ -52,17 +52,24 @@ internal class BackgroundEngineKerbalism
             node.AddValue("Throttle", engine.independentThrottlePercentage * 0.01);
 
         // UpdateThrottle folds the thrust limiter into the requested throttle,
-        // so it scales both thrust and fuel flow. Bake it in here since we never
-        // see currentThrottle while unloaded.
-        var limiter = engine.thrustPercentage * 0.01;
-        node.AddValue("Thrust", engine.maxThrust * limiter);
+        // and the fuel flow then lerps from minFuelFlow to maxFuelFlow. The
+        // limiter and throttle have to combine inside the lerp, so persist
+        // them for BackgroundUpdate instead of baking them into the rates.
+        node.AddValue("ThrustLimiter", engine.thrustPercentage * 0.01);
+        node.AddValue(
+            "MinFlowFraction",
+            engine.maxFuelFlow > 0f
+                ? UtilMath.Clamp01(engine.minFuelFlow / engine.maxFuelFlow)
+                : 0.0
+        );
+        node.AddValue("Thrust", engine.maxThrust);
 
         foreach (var propellant in engine.propellants)
         {
             var info = new PropellantInfo()
             {
                 ResourceName = propellant.resourceDef.name,
-                Rate = engine.getMaxFuelFlow(propellant) * limiter,
+                Rate = engine.getMaxFuelFlow(propellant),
             };
 
             info.Save(node.AddNode("PROPELLANT"));
@@ -113,14 +120,28 @@ internal class BackgroundEngineKerbalism
         if (!node.TryGetValue("Thrust", ref thrust))
             return KerbalismToolTipName;
 
+        // Nodes saved by older versions bake the limiter into the Thrust and
+        // Rate values instead; these defaults reproduce that behaviour.
+        double limiter = 1.0;
+        double minFlowFraction = 0.0;
+        node.TryGetValue("ThrustLimiter", ref limiter);
+        node.TryGetValue("MinFlowFraction", ref minFlowFraction);
+
+        // The fraction of the max fuel flow (and thrust) that the engine
+        // produces at this throttle. Mirrors ModuleEngines, which folds the
+        // thrust limiter into the requested throttle and then lerps the fuel
+        // flow from minFuelFlow to maxFuelFlow.
+        var fraction =
+            minFlowFraction + (1.0 - minFlowFraction) * (UtilMath.Clamp01(throttle) * limiter);
+
         resourceChangeRequest.Add(
-            new(KerbalismVesselInfoProvider.ThrustResourceName, thrust * throttle)
+            new(KerbalismVesselInfoProvider.ThrustResourceName, thrust * fraction)
         );
 
         foreach (var propNode in node.GetNodes("PROPELLANT"))
         {
             var propellant = new PropellantInfo(propNode);
-            resourceChangeRequest.Add(new(propellant.ResourceName, -propellant.Rate * throttle));
+            resourceChangeRequest.Add(new(propellant.ResourceName, -propellant.Rate * fraction));
         }
 
         return KerbalismToolTipName;
