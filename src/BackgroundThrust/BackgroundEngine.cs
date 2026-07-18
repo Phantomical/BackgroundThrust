@@ -370,6 +370,7 @@ public class BackgroundEngine : PartModule
 
             Buffer buffer = new();
             buffer.Load(bnode);
+            buffers[resource] = buffer;
         }
     }
 
