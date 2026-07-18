@@ -520,7 +520,7 @@ public class BackgroundThrustVessel : VesselModule
         if (TargetHeading?.GetTargetHeading(now) is TargetHeading target && target.IsValid())
         {
             // Make sure that the vessel is pointing in the target direction.
-            vessel.SetRotation(target.Orientation);
+            RotateToOrientation(target.Orientation);
         }
     }
 
