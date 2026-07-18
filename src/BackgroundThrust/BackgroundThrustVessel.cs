@@ -423,7 +423,7 @@ public class BackgroundThrustVessel : VesselModule
         {
             StartUT = lastUpdateTime,
             StopUT = UT,
-            StartMass = LastUpdateMass,
+            StartMass = lastUpdateMass,
             StopMass = currentMass,
             Thrust = thrust * Heading,
         };
