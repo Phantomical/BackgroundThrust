@@ -3,6 +3,7 @@ using HarmonyLib;
 
 namespace BackgroundThrust.Patches;
 
+[HarmonyPatch(typeof(ActionGroupList), nameof(ActionGroupList.ToggleGroup))]
 internal static class ActionGroupList_ToggleGroup_Patch
 {
     static readonly int SASIndex = BaseAction.GetGroupIndex(KSPActionGroup.SAS);
