@@ -90,6 +90,6 @@ internal static class UllageModule_FixedUpdate_Patch
             return;
 
         var module = vessel.GetBackgroundThrust();
-        accel += module.Thrust.xzy / vessel.totalMass;
+        accel += module.Thrust / vessel.totalMass;
     }
 }
