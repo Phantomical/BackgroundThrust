@@ -14,13 +14,18 @@ internal static class Kerbalism_Patch
     const BindingFlags Instance =
         BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 
-    static double GetLastUpdateTimeBase(Guid vesselId) => Planetarium.GetUniversalTime();
+    static double GetUnprocessedTimeBase(Guid vesselId) => 0.0;
 
     static Dictionary<int, ResourceInfo> GetResourcesBase(VesselResources v) => null;
 
+    /// <summary>
+    /// Returns the elapsed time that Kerbalism has accumulated for this
+    /// vessel but not yet applied to its resources. This is not a UT: it is
+    /// zeroed each time the vessel's turn comes up in the round-robin.
+    /// </summary>
     [HarmonyReversePatch]
-    [HarmonyPatch(typeof(Kerbalism_Patch), nameof(GetLastUpdateTimeBase))]
-    internal static double? GetLastUpdateTime(Guid vesselId)
+    [HarmonyPatch(typeof(Kerbalism_Patch), nameof(GetUnprocessedTimeBase))]
+    internal static double? GetUnprocessedTime(Guid vesselId)
     {
 #pragma warning disable CS8321 // Local function is declared but never used
         static IEnumerable<CodeInstruction> Transpiler(
@@ -46,7 +51,7 @@ internal static class Kerbalism_Patch
 
             // What we're trying to generate here is effectively
             //
-            // double? GetLastUpdateTime(Guid vesselId)
+            // double? GetUnprocessedTime(Guid vesselId)
             // {
             //    if (Kerbalism.unloaded.TryGetValue(vesselId, out Unloaded_data data))
             //      return data.time;

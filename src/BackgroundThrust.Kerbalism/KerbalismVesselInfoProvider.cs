@@ -30,9 +30,13 @@ public class KerbalismVesselInfoProvider : VesselInfoProvider
             return dryMass;
 
         var resources = ResourceCache.Get(vessel);
-        var lastUpdate = Kerbalism_Patch.GetLastUpdateTime(vessel.id) ?? UT;
         var resList = Kerbalism_Patch.GetResources(resources);
-        var deltaT = Math.Min(UT - lastUpdate, 0.0);
+
+        // Kerbalism's unloaded[id].time is not a UT: it accumulates the
+        // elapsed time that has not yet been applied to this vessel's
+        // resources, and is zeroed each time the vessel gets processed. That
+        // pending window is exactly how far the cached amounts are behind.
+        var deltaT = Math.Max(Kerbalism_Patch.GetUnprocessedTime(vessel.id) ?? 0.0, 0.0);
 
         double mass = dryMass;
         foreach (var resource in resList.Values)
