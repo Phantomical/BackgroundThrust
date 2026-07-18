@@ -28,10 +28,20 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
         if (!engine.isOperational)
             return null;
 
+        // Mirrors the branch order in ModuleEngines.UpdateThrottle: a locked
+        // throttle runs at the limiter and ignores both the independent and the
+        // vessel throttle. A null throttle falls back to the vessel's.
         double? throttle = null;
-        if (engine.independentThrottle)
+        if (engine.throttleLocked)
+            throttle = 1.0;
+        else if (engine.independentThrottle)
             throttle = engine.independentThrottlePercentage * 0.01;
-        var maxThrust = engine.maxThrust;
+
+        // ModuleEngines.UpdateThrottle folds the thrust limiter into the
+        // requested throttle, so it scales both thrust and fuel flow. Bake it
+        // in here since we never see currentThrottle while unloaded.
+        var limiter = engine.thrustPercentage * 0.01;
+        var maxThrust = engine.maxThrust * limiter;
 
         var inputs = new List<ResourceRatio>(engine.propellants.Count);
         var outputs = new List<ResourceRatio>();
@@ -42,7 +52,7 @@ public class BackgroundEngineConverter : BackgroundConverter<BackgroundEngine>
             var input = new ResourceRatio()
             {
                 ResourceName = propellant.resourceDef.name,
-                Ratio = engine.getMaxFuelFlow(propellant),
+                Ratio = engine.getMaxFuelFlow(propellant) * limiter,
                 FlowMode = propellant.GetFlowMode(),
                 DumpExcess = false,
             };

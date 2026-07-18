@@ -39,16 +39,26 @@ internal class BackgroundEngineKerbalism
         if (!BackgroundThrustVessel.IsThrustPermitted(module.vessel))
             return;
 
-        if (module.Engine.independentThrottle)
+        // Mirrors the branch order in ModuleEngines.UpdateThrottle: a locked
+        // throttle runs at the limiter and ignores both the independent and the
+        // vessel throttle. An absent Throttle key falls back to the vessel's.
+        if (engine.throttleLocked)
+            node.AddValue("Throttle", 1.0);
+        else if (engine.independentThrottle)
             node.AddValue("Throttle", engine.independentThrottlePercentage * 0.01);
-        node.AddValue("Thrust", engine.maxThrust);
+
+        // UpdateThrottle folds the thrust limiter into the requested throttle,
+        // so it scales both thrust and fuel flow. Bake it in here since we never
+        // see currentThrottle while unloaded.
+        var limiter = engine.thrustPercentage * 0.01;
+        node.AddValue("Thrust", engine.maxThrust * limiter);
 
         foreach (var propellant in engine.propellants)
         {
             var info = new PropellantInfo()
             {
                 ResourceName = propellant.resourceDef.name,
-                Rate = engine.getMaxFuelFlow(propellant),
+                Rate = engine.getMaxFuelFlow(propellant) * limiter,
             };
 
             info.Save(node.AddNode("PROPELLANT"));
