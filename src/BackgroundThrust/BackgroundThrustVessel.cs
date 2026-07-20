@@ -53,10 +53,64 @@ public class BackgroundThrustVessel : VesselModule
         }
     }
 
+    [KSPField(isPersistant = true)]
+    private Quaternion controlPointRotation = Quaternion.identity;
+
+    /// <summary>
+    /// The rotation of the vessel's active control point relative to the
+    /// vessel transform.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// An unloaded vessel has no part transforms, so
+    /// <c>vessel.ReferenceTransform</c> falls back to the vessel transform and
+    /// any rotation baked into the control point - such as that of a reversed
+    /// control point - disappears. We record it while the vessel is loaded so
+    /// that the background path keeps orienting the vessel the same way that
+    /// the packed path does.
+    /// </remarks>
+    public Quaternion ControlPointRotation
+    {
+        get
+        {
+            if (vessel.loaded)
+            {
+                // Keep the last known value if the vessel is in a state where
+                // it has no reference transform, rather than snapping the
+                // control point back to the vessel transform.
+                var reference = vessel.ReferenceTransform;
+                if (reference != null)
+                    controlPointRotation =
+                        Quaternion.Inverse(vessel.transform.rotation) * reference.rotation;
+            }
+
+            return controlPointRotation;
+        }
+    }
+
+    /// <summary>
+    /// The world rotation of the vessel's control point. This is the frame that
+    /// target headings are expressed in and the one that gets pointed at the
+    /// target heading.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// For a loaded vessel this is just <c>vessel.ReferenceTransform.rotation</c>.
+    /// </remarks>
+    public Quaternion ControlRotation => vessel.transform.rotation * ControlPointRotation;
+
     /// <summary>
     /// The current vessel heading for the purposes of applying thrust.
     /// </summary>
-    public Vector3d Heading => vessel.ReferenceTransform.up;
+    ///
+    /// <remarks>
+    /// This is the vessel transform's up axis, not the control point's. The two
+    /// only line up if the control point is not rotated relative to the vessel:
+    /// engines push whichever way they are physically mounted no matter which
+    /// control point is selected, so a reversed control point thrusts opposite
+    /// to the direction that it is aimed.
+    /// </remarks>
+    public Vector3d Heading => vessel.transform.up;
 
     /// <summary>
     /// The known dry mass of the vessel. This is only updated when the vessel
@@ -459,14 +513,16 @@ public class BackgroundThrustVessel : VesselModule
     // This is its own method so that it can be patched in the future if needed.
     private void RotateToOrientation(Quaternion target)
     {
-        // We need to rotate the vessel so that the reference transform is
-        // oriented at the target orientation.
+        // We need to rotate the vessel so that its control point is oriented at
+        // the target orientation.
         //
-        // We do this by subtracting the original rotation of the reference
-        // part from the target rotation.
+        // SetRotation rotates the vessel transform, so we subtract the rotation
+        // of the control point relative to it. That covers both the reference
+        // part's orgRot and any rotation baked into the control point itself,
+        // which is what makes reversed control points come out the right way
+        // around.
 
-        var rprot = vessel.GetReferenceTransformPart()?.orgRot ?? Quaternion.identity;
-        var final = target * Quaternion.Inverse(rprot);
+        var final = target * Quaternion.Inverse(ControlPointRotation);
 
         vessel.SetRotation(final);
     }
@@ -480,7 +536,7 @@ public class BackgroundThrustVessel : VesselModule
 
     public FixedHeading GetFixedHeading()
     {
-        return new(vessel.ReferenceTransform.rotation) { Vessel = vessel };
+        return new(ControlRotation) { Vessel = vessel };
     }
 
     public double ComputeDryMass()
@@ -603,6 +659,10 @@ public class BackgroundThrustVessel : VesselModule
     {
         if (vessel.loaded && TargetHeading is null)
             RefreshTargetHeading();
+
+        // Reading this refreshes the cached value from the live transforms so
+        // that base.OnSave persists an up-to-date one.
+        _ = ControlPointRotation;
 
         base.OnSave(node);
 

@@ -138,8 +138,13 @@ public struct TargetHeading
 
     public static TargetHeading PointAt(Vessel vessel, Vector3d heading)
     {
-        var delta = Quaternion.FromToRotation(vessel.ReferenceTransform.up, heading);
-        return new(delta * vessel.ReferenceTransform.rotation);
+        // Note that this must be the control point rotation and not the vessel
+        // transform's. An unloaded vessel has no control point transform, so
+        // going through the module is the only way to get one that accounts for
+        // a control point that is rotated relative to its part.
+        var rotation = vessel.GetBackgroundThrust().ControlRotation;
+        var delta = Quaternion.FromToRotation(rotation * Vector3.up, heading);
+        return new(delta * rotation);
     }
 
     public readonly bool IsValid()

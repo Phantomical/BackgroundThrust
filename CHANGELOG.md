@@ -11,6 +11,10 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+### Fixed
+* Vessels using a reversed control point (or any control point that is rotated
+  relative to the part it sits on) are no longer pointed 180 degrees away from
+  the selected SAS mode while in time warp or in the background.
 
 ## 0.6.11
 ### Added

@@ -24,11 +24,11 @@ internal class EventDispatcher : MonoBehaviour
         if (pr is null)
             return;
 
-        // We want the reference transform to point in the target direction
-        // so we need to correct the orientation to apply correctly.
-        var relative =
-            vessel.transform.rotation * Quaternion.Inverse(vessel.ReferenceTransform.rotation);
-        orientation *= relative;
+        // The target orientation says where the control point should end up but
+        // PersistentRotation stores the rotation of the vessel transform, so we
+        // subtract the control point's rotation relative to the vessel the same
+        // way that RotateToOrientation does.
+        orientation *= Quaternion.Inverse(module.ControlPointRotation);
 
         pr.storedAngularMomentum = Vector3d.zero;
         pr.rotation = orientation;
