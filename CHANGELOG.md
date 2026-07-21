@@ -11,6 +11,8 @@ Note: Spacedock's markdown doesn't recognize lists using `-`, so make sure to
 -->
 
 ## Unreleased
+
+## 0.6.12
 ### Fixed
 * Vessels using a reversed control point (or any control point that is rotated
   relative to the part it sits on) are no longer pointed 180 degrees away from
